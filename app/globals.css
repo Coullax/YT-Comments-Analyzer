@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+img{
+    width: 100% !important;
+}

@@ -3,14 +3,6 @@ from typing import List, Dict
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from openai import OpenAI
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from flask_cors import CORS
 import time
 import re
@@ -29,8 +21,14 @@ from collections import Counter
 import numpy as np
 from wordcloud import WordCloud
 from datetime import datetime
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
 load_dotenv()
+
+# Configure YouTube API
+YOUTUBE_API_KEY = "AIzaSyAaCfO0i6W2K9NLgvU0h8NjQxAxPZ5qbF8"
+youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
 
 # Configure Gemini API
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyB_5IyMabHG-YXtflNm35H2YrcQP4fCXNs')
@@ -82,218 +80,97 @@ def health_check():
     return jsonify({"status": "healthy"}), 200
 
 def extract_video_id(url: str) -> str:
+    """Extract video ID from various YouTube URL formats"""
     if "v=" in url:
         return url.split("v=")[1].split("&")[0]
     elif "youtu.be/" in url:
         return url.split("youtu.be/")[1].split("?")[0]
     raise ValueError("Invalid YouTube URL")
 
-def setup_driver():
-    try:
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        service = Service(ChromeDriverManager().install())
-        return webdriver.Chrome(service=service, options=chrome_options)
-    except Exception as e:
-        print(f"Error setting up Chrome driver: {str(e)}")
-        traceback.print_exc()
-        raise ValueError("Failed to initialize Chrome driver. Make sure Chrome is installed.")
-    
-
-def parse_likes(likes_text: str) -> int:
-    """Converts like count string (like '1.2K', '3M') to integer."""
-    if not likes_text:
-        return 0
-    likes_text = likes_text.lower()
-    if 'k' in likes_text:
-        return int(float(likes_text.replace('k', '')) * 1000)
-    elif 'm' in likes_text:
-        return int(float(likes_text.replace('m', '')) * 1_000_000)
-    else:
-        return int(likes_text)
-
-
-def get_video_comments(video_url: str, max_retries: int = 3, max_comments: int = None) -> Dict:
-    """
-    Scrapes YouTube comments including replies with Selenium.
-    
-    Args:
-        video_url (str): URL of the YouTube video.
-        max_retries (int): Number of retries on failure.
-        max_comments (int): Maximum number of comments + replies to scrape.
-
-    Returns:
-        Dict: A dictionary containing:
-            - comment_count_displayed: Total comment count shown on YouTube (e.g., "1.2M")
-            - comment_count_parsed: Parsed integer version (e.g., 1200000)
-            - comments: List of dictionaries with comment details (top-level + replies)
-    """
-    if max_comments is None:
-        max_comments = float('inf')
+def get_video_comments(video_url: str, max_retries: int = 3) -> List[Dict]:
+    """Fetch comments and their replies using YouTube Data API"""
+    video_id = extract_video_id(video_url)
+    comments = []
+    max_comments = 100000000000000000000000000000
+    max_replies_per_comment = 100000000000000000000000000000
 
     for attempt in range(max_retries):
-        driver = None
         try:
-            driver = setup_driver()
-            driver.set_page_load_timeout(60)
-            driver.get(video_url)
-            time.sleep(5)
+            # Get top-level comments from YouTube API
+            request = youtube.commentThreads().list(
+                part="snippet,replies",
+                videoId=video_id,
+                maxResults=min(max_comments, 100),  # API limit is 100 per request
+                order="relevance",
+                textFormat="plainText"
+            )
 
-            # Accept cookies
-            try:
-                accept_cookies = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, '//button[contains(text(), "Accept all")]'))
-                )
-                accept_cookies.click()
-                time.sleep(2)
-            except Exception as e:
-                print("No cookie consent popup found or could not click:", str(e))
+            while request and len(comments) < max_comments:
+                response = request.execute()
+                
+                for item in response['items']:
+                    top_comment = item['snippet']['topLevelComment']['snippet']
+                    comment_data = {
+                        "text": top_comment['textDisplay'],
+                        "author": top_comment['authorDisplayName'],
+                        "likes": top_comment['likeCount'],
+                        "publishedAt": top_comment['publishedAt'],
+                        "replies": []
+                    }
+                    
+                    # Fetch replies if they exist
+                    if item['snippet']['totalReplyCount'] > 0 and 'replies' in item:
+                        reply_request = youtube.comments().list(
+                            part="snippet",
+                            parentId=item['snippet']['topLevelComment']['id'],
+                            maxResults=min(max_replies_per_comment, 100),  # API limit is 100 per request
+                            textFormat="plainText"
+                        )
+                        reply_response = reply_request.execute()
+                        for reply_item in reply_response['items']:
+                            reply = reply_item['snippet']
+                            comment_data['replies'].append({
+                                "text": reply['textDisplay'],
+                                "author": reply['authorDisplayName'],
+                                "likes": reply['likeCount'],
+                                "publishedAt": reply['publishedAt']
+                            })
+                            if len(comment_data['replies']) >= max_replies_per_comment:
+                                break
 
-            # Extract comment count from UI
-            comment_count_displayed = "Unknown"
-            comment_count_parsed = 0
-            try:
-                comment_section_header = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, '//yt-formatted-string[@class="count-text style-scope ytd-comments-header-renderer"]'))
-                )
-                comment_count_displayed = comment_section_header.text.strip()
-
-                # Try parsing it
-                if 'K' in comment_count_displayed:
-                    comment_count_parsed = int(float(comment_count_displayed.replace('K', '').strip()) * 1000)
-                elif 'M' in comment_count_displayed:
-                    comment_count_parsed = int(float(comment_count_displayed.replace('M', '').strip()) * 1_000_000)
-                elif ',' in comment_count_displayed:
-                    comment_count_parsed = int(comment_count_displayed.replace(',', '').strip())
-                elif comment_count_displayed.isdigit():
-                    comment_count_parsed = int(comment_count_displayed)
-                else:
-                    comment_count_parsed = -1  # Unknown format
-            except Exception as e:
-                print("Could not extract comment count:", str(e))
-
-            # Scroll down to load comments
-            last_height = driver.execute_script("return document.documentElement.scrollHeight")
-            comment_count = 0
-            scroll_pause = 2
-            scroll_attempts = 0
-            max_scroll_attempts = 100
-            comments = []
-
-            while comment_count < max_comments and scroll_attempts < max_scroll_attempts:
-                driver.execute_script("window.scrollTo(0, document.documentElement.scrollHeight);")
-                time.sleep(scroll_pause)
-
-                # Click "Load more comments"
-                try:
-                    load_more_button = WebDriverWait(driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, '//*[contains(text(), "Load more comments")]'))
-                    )
-                    load_more_button.click()
-                    time.sleep(scroll_pause)
-                except TimeoutException:
-                    pass
-
-                # Expand replies
-                reply_buttons = driver.find_elements(By.XPATH,
-                                                     '//yt-formatted-string[text()="View replies" or text()="Show more replies"]')
-                for btn in reply_buttons:
-                    try:
-                        driver.execute_script("arguments[0].scrollIntoView();", btn)
-                        driver.execute_script("arguments[0].click();", btn)
-                        time.sleep(0.5)
-                    except Exception as e:
-                        continue
-
-                # Wait for comments to load
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, 'ytd-comment-thread-renderer'))
-                )
-
-                # Parse current threads
-                threads = driver.find_elements(By.TAG_NAME, 'ytd-comment-thread-renderer')
-                print(f"Loaded {len(threads)} comment threads so far...")
-
-                # Process each thread
-                for thread in threads[comment_count:]:
-                    if comment_count >= max_comments:
+                    comments.append(comment_data)
+                    if len(comments) >= max_comments:
                         break
-                    try:
-                        top_comment = thread.find_element(By.CSS_SELECTOR, '#content-text')
-                        author = thread.find_element(By.CSS_SELECTOR, '#author-text').text.strip()
-                        likes_text = thread.find_element(By.CSS_SELECTOR, '#vote-count-middle').text.strip()
-                        published_at = ""
 
-                        likes = parse_likes(likes_text)
-
-                        comment_data = {
-                            "text": top_comment.text,
-                            "author": author,
-                            "likes": likes,
-                            "publishedAt": published_at,
-                            "replies": []
-                        }
-
-                        # Extract replies
-                        reply_containers = thread.find_elements(By.CSS_SELECTOR, 'ytd-comment-renderer')
-                        for reply in reply_containers:
-                            try:
-                                reply_text = reply.find_element(By.CSS_SELECTOR, '#content-text').text
-                                reply_author = reply.find_element(By.CSS_SELECTOR, '#author-text').text.strip()
-                                reply_likes_text = reply.find_element(By.CSS_SELECTOR, '#vote-count-middle').text.strip()
-                                reply_likes = parse_likes(reply_likes_text)
-
-                                comment_data["replies"].append({
-                                    "text": reply_text,
-                                    "author": reply_author,
-                                    "likes": reply_likes
-                                })
-                                comment_count += 1
-                                if comment_count >= max_comments:
-                                    break
-                            except Exception as e:
-                                print("Error parsing reply:", str(e))
-                                continue
-
-                        comments.append(comment_data)
-                        comment_count += 1
-
-                    except Exception as e:
-                        print("Error parsing top comment:", str(e))
-                        continue
-
-                new_height = driver.execute_script("return document.documentElement.scrollHeight")
-                if new_height == last_height:
+                # Get the next page of comments
+                if 'nextPageToken' in response and len(comments) < max_comments:
+                    request = youtube.commentThreads().list(
+                        part="snippet,replies",
+                        videoId=video_id,
+                        maxResults=min(max_comments - len(comments), 100),
+                        pageToken=response['nextPageToken'],
+                        order="relevance",
+                        textFormat="plainText"
+                    )
+                else:
                     break
-                last_height = new_height
-                scroll_attempts += 1
 
-            return {
-                "comment_count_displayed": comment_count_displayed,
-                "comment_count_parsed": comment_count_parsed,
-                "comments": comments[:max_comments]
-            }
+            return comments
 
+        except HttpError as e:
+            if e.resp.status == 403:
+                raise ValueError("Comments are disabled for this video or API quota exceeded")
+            elif e.resp.status == 404:
+                raise ValueError("Video not found")
+            elif attempt == max_retries - 1:
+                raise ValueError(f"Failed to fetch comments after {max_retries} attempts: {str(e)}")
+            time.sleep(1)  # Wait before retry
         except Exception as e:
-            print(f"Attempt {attempt + 1} failed: {str(e)}")
-            traceback.print_exc()
             if attempt == max_retries - 1:
-                raise ValueError(f"Failed to scrape comments after {max_retries} attempts: {str(e)}")
-        finally:
-            if driver:
-                try:
-                    driver.quit()
-                except:
-                    pass
+                raise ValueError(f"Failed to fetch comments: {str(e)}")
+            time.sleep(1)  # Wait before retry
 
-    return {
-        "comment_count_displayed": "Unknown",
-        "comment_count_parsed": 0,
-        "comments": []
-    }
+    return []  # Return empty list if all attempts fail but don't raise error
 
 def analyze_sentiment(text: str) -> Dict:
     """Analyze sentiment of text using TextBlob"""
@@ -303,22 +180,13 @@ def analyze_sentiment(text: str) -> Dict:
         'subjectivity': round(analysis.sentiment.subjectivity, 2)
     }
 
-def parse_likes(likes_text: str) -> int:
-    """Converts like count string (like '1.2K', '3M') to integer."""
-    if not likes_text:
-        return 0
-    likes_text = likes_text.lower()
-    if 'k' in likes_text:
-        return int(float(likes_text.replace('k', '')) * 1000)
-    elif 'm' in likes_text:
-        return int(float(likes_text.replace('m', '')) * 1_000_000)
-    else:
-        return int(likes_text)
-
 def create_sentiment_visualization(comments: List[Dict]) -> str:
     """Create sentiment visualization and return as base64 string"""
-    # Extract sentiments for all comments
-    sentiments = [analyze_sentiment(comment['text']) for comment in comments]
+    # Extract sentiments for all comments and replies
+    all_texts = [comment['text'] for comment in comments]
+    for comment in comments:
+        all_texts.extend(reply['text'] for reply in comment.get('replies', []))
+    sentiments = [analyze_sentiment(text) for text in all_texts]
     df = pd.DataFrame(sentiments)
     
     # Create the plot
@@ -326,7 +194,7 @@ def create_sentiment_visualization(comments: List[Dict]) -> str:
     plt.scatter(df['polarity'], df['subjectivity'], alpha=0.5)
     plt.xlabel('Polarity (Negative to Positive)')
     plt.ylabel('Subjectivity (Objective to Subjective)')
-    plt.title('Comment Sentiment Analysis')
+    plt.title('Comment Sentiment Analysis (Including Replies)')
     
     # Save plot to base64 string
     buffer = io.BytesIO()
@@ -340,11 +208,13 @@ def create_sentiment_visualization(comments: List[Dict]) -> str:
 def create_engagement_visualization(comments: List[Dict]) -> str:
     """Create engagement distribution visualization"""
     likes = [comment['likes'] for comment in comments]
+    for comment in comments:
+        likes.extend(reply['likes'] for reply in comment.get('replies', []))
     plt.figure(figsize=(10, 6))
     plt.hist(likes, bins=30, color='skyblue', edgecolor='black')
     plt.xlabel('Number of Likes')
     plt.ylabel('Frequency')
-    plt.title('Comment Engagement Distribution')
+    plt.title('Comment Engagement Distribution (Including Replies)')
     
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png')
@@ -355,8 +225,11 @@ def create_engagement_visualization(comments: List[Dict]) -> str:
     return image_base64
 
 def create_wordcloud_visualization(comments: List[Dict]) -> str:
-    """Create word cloud visualization from comments"""
-    text = ' '.join([comment['text'] for comment in comments])
+    """Create word cloud visualization from comments and replies"""
+    all_texts = [comment['text'] for comment in comments]
+    for comment in comments:
+        all_texts.extend(reply['text'] for reply in comment.get('replies', []))
+    text = ' '.join(all_texts)
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
     
     plt.figure(figsize=(10, 5))
@@ -373,10 +246,15 @@ def create_wordcloud_visualization(comments: List[Dict]) -> str:
 
 def create_sentiment_timeline(comments: List[Dict]) -> str:
     """Create sentiment over time visualization"""
-    sentiments = [analyze_sentiment(comment['text'])['polarity'] for comment in comments]
+    all_texts = [(comment['text'], i) for i, comment in enumerate(comments)]
+    for comment in comments:
+        all_texts.extend((reply['text'], i) for i, reply in enumerate(comment.get('replies', [])))
+    # Sort by sequence index and extract sentiments
+    sorted_texts = sorted(all_texts, key=lambda x: x[1])
+    sentiments = [analyze_sentiment(text)['polarity'] for text, _ in sorted_texts]
     plt.figure(figsize=(12, 6))
     plt.plot(range(len(sentiments)), sentiments, marker='o', linestyle='-', alpha=0.6)
-    plt.xlabel('Comment Sequence')
+    plt.xlabel('Comment Sequence (Including Replies)')
     plt.ylabel('Sentiment Polarity')
     plt.title('Sentiment Timeline')
     plt.grid(True, alpha=0.3)
@@ -414,10 +292,13 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
         return create_default_section('all')
         
     try:
-        # Format comments for analysis
-        comments_text = "Analyze these YouTube comments:\n\n"
+        # Format comments and replies for analysis
+        comments_text = "Analyze these YouTube comments and their replies:\n\n"
         for i, comment in enumerate(comments[:50], 1):
-            comments_text += f"Comment {i}:\n- Text: {comment['text']}\n- Likes: {comment['likes']}\n\n"
+            comments_text += f"Comment {i}:\n- Text: {comment['text']}\n- Likes: {comment['likes']}\n"
+            for j, reply in enumerate(comment.get('replies', [])[:5], 1):
+                comments_text += f"  Reply {j}: {reply['text']} (Likes: {reply['likes']})\n"
+            comments_text += "\n"
         
         prompt = f"""
         {comments_text}
@@ -464,6 +345,7 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
         3. Engagement levels: high >100 likes, medium 10-100 likes, low <10 likes
         4. Key topics should be specific themes mentioned frequently
         5. Provide actionable recommendations
+        6. Include both top-level comments and replies in the analysis
 
         Return ONLY the JSON object, no additional text.
         """
@@ -543,15 +425,18 @@ def chat():
             return jsonify({"error": "AI model not available"}), 503
 
         comments = comment_store[data["analysis_id"]]
-        comments_text = "Here are the YouTube comments to analyze:\n\n"
+        comments_text = "Here are the YouTube comments and replies to analyze:\n\n"
         for i, comment in enumerate(comments[:50], 1):
-            comments_text += f"Comment {i}:\n- Text: {comment['text']}\n- Likes: {comment['likes']}\n\n"
+            comments_text += f"Comment {i}:\n- Text: {comment['text']}\n- Likes: {comment['likes']}\n"
+            for j, reply in enumerate(comment.get('replies', [])[:5], 1):
+                comments_text += f"  Reply {j}: {reply['text']} (Likes: {reply['likes']})\n"
+            comments_text += "\n"
 
         prompt = f"""
-        Based on these YouTube comments, please answer the following question:
+        Based on these YouTube comments and replies, please answer the following question:
         Question: {data['question']}
 
-        Comments:
+        Comments and Replies:
         {comments_text}
 
         Provide a detailed analysis in this exact JSON format:
@@ -563,8 +448,8 @@ def chat():
         }}
 
         Rules:
-        1. Base your answer solely on the provided comments
-        2. Include 2-3 most relevant comments that support your answer
+        1. Base your answer solely on the provided comments and replies
+        2. Include 2-3 most relevant comments or replies that support your answer
         3. Keep the response focused and specific
         4. Return ONLY the JSON object, no additional text
         """
@@ -635,31 +520,31 @@ def analyze_video():
     try:
         data = request.get_json()
         if not data or "video_url" not in data or "analysis_id" not in data:
-            return jsonify({"error": "Missing required parameters"}), 400
-        
-        result = get_video_comments(data["video_url"], max_comments=10000)
+            return jsonify({"error": "Missing required parameters", "status": "error"}), 400
 
-        print("Displayed comment count:", result["comment_count_displayed"])
-        print("Parsed comment count:", result["comment_count_parsed"])
-        print("Fetched comment count:", len(result["comments"]))
-
-        # comments = get_video_comments(data["video_url"], max_comments=1000000)
-        comments = result["comments"]
+        comments = get_video_comments(data["video_url"])
         
         if not comments:
             return jsonify({
-                "error": "No comments were found or could be loaded"
+                "error": "No comments were found or could be loaded",
+                "status": "error"
             }), 404
         
         # Store comments for chat functionality
         comment_store[data["analysis_id"]] = comments
         
-        # Sort comments by likes
-        sorted_comments = sorted(comments, key=lambda x: x['likes'], reverse=True)
+        # Sort comments by likes (including replies in total engagement consideration)
+        def get_total_likes(comment):
+            return comment['likes'] + sum(reply['likes'] for reply in comment.get('replies', []))
+        sorted_comments = sorted(comments, key=get_total_likes, reverse=True)
         
+        # Calculate total comments including replies
+        total_comments = len(sorted_comments)  # Start with top-level comments
+        for comment in sorted_comments:
+            total_comments += len(comment.get('replies', []))  # Add number of replies
+
         # Basic statistics
-        total_comments = len(sorted_comments)
-        total_likes = sum(c['likes'] for c in sorted_comments)
+        total_likes = sum(get_total_likes(c) for c in sorted_comments)
         avg_likes = total_likes / total_comments if total_comments > 0 else 0
         
         # Get AI analysis
@@ -674,22 +559,24 @@ def analyze_video():
             "category_distribution": create_category_distribution(ai_analysis)
         }
         
-        # Add sentiment analysis to each comment
+        # Add sentiment analysis to each comment and reply
         for comment in sorted_comments:
             comment['sentiment'] = analyze_sentiment(comment['text'])
+            for reply in comment.get('replies', []):
+                reply['sentiment'] = analyze_sentiment(reply['text'])
         
         # Calculate additional metrics
         engagement_rates = {
-            "high_engagement_rate": (ai_analysis['engagement_metrics']['high_engagement'] / total_comments) * 100,
-            "medium_engagement_rate": (ai_analysis['engagement_metrics']['medium_engagement'] / total_comments) * 100,
-            "low_engagement_rate": (ai_analysis['engagement_metrics']['low_engagement'] / total_comments) * 100
+            "high_engagement_rate": (ai_analysis['engagement_metrics']['high_engagement'] / total_comments) * 100 if total_comments > 0 else 0,
+            "medium_engagement_rate": (ai_analysis['engagement_metrics']['medium_engagement'] / total_comments) * 100 if total_comments > 0 else 0,
+            "low_engagement_rate": (ai_analysis['engagement_metrics']['low_engagement'] / total_comments) * 100 if total_comments > 0 else 0
         }
         
         sentiment_metrics = {
-            "positive_rate": (ai_analysis['sentiment_distribution']['positive'] / total_comments) * 100,
-            "neutral_rate": (ai_analysis['sentiment_distribution']['neutral'] / total_comments) * 100,
-            "negative_rate": (ai_analysis['sentiment_distribution']['negative'] / total_comments) * 100,
-            "average_sentiment": sum(c['sentiment']['polarity'] for c in sorted_comments) / total_comments
+            "positive_rate": (ai_analysis['sentiment_distribution']['positive'] / total_comments) * 100 if total_comments > 0 else 0,
+            "neutral_rate": (ai_analysis['sentiment_distribution']['neutral'] / total_comments) * 100 if total_comments > 0 else 0,
+            "negative_rate": (ai_analysis['sentiment_distribution']['negative'] / total_comments) * 100 if total_comments > 0 else 0,
+            "average_sentiment": sum(c['sentiment']['polarity'] for c in sorted_comments) / total_comments if total_comments > 0 else 0
         }
     
         return jsonify({
@@ -703,16 +590,17 @@ def analyze_video():
                 "engagement_rates": engagement_rates,
                 "sentiment_metrics": sentiment_metrics
             },
+            "visualizations": visualizations,
             "ai_analysis": ai_analysis,
-            "visualizations": visualizations
+            "error": None
         })
             
     except ValueError as e:
         print(traceback.format_exc())
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e), "status": "error"}), 400
     except Exception as e:
         print(traceback.format_exc())
-        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error", "status": "error", "details": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, threaded=True) 
+    app.run(host="0.0.0.0", port=8000, threaded=True)

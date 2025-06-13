@@ -58,7 +58,9 @@ model Analysis {
   videoUrl  String
   videoId   String
   summary   String
-  sentiment Json
+  sentiment   Json     @default("{}")
+  visualizations Json? // New field for visualizations
+  aiAnalysis  Json?   // New field for AI analysis
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

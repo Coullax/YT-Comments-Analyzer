@@ -44,6 +44,8 @@ interface AnalysisResponse {
     average_likes: number
   }
   sentiment_visualization: string
+  visualizations: any
+  ai_analysis: any
   gemini_analysis: {
     sentiment_distribution: {
       positive: number
@@ -72,6 +74,7 @@ interface AnalysisResponse {
       community_health: string
     }
     recommendations: string[]
+    
   }
 }
 
@@ -185,35 +188,58 @@ export default function Dashboard() {
           </Text>
         </Box>
 
-        <Card>
+        <Card boxShadow="lg" borderRadius="xl" bg="white" p={2} w="full" maxW="3xl" alignSelf="center">
           <CardBody>
             <form onSubmit={handleSubmit}>
-              <VStack spacing={4}>
+              <VStack spacing={6}>
                 <FormControl>
-                  <FormLabel>Video URL</FormLabel>
-                  <InputGroup>
-                    <InputLeftElement>
-                      <Icon as={MdVideoLibrary} color="gray.500" />
+                  <FormLabel fontWeight="bold" color="#FF0000" fontSize="lg">
+                    <Icon as={MdVideoLibrary} color="#FF0000" mr={2} />
+                    YouTube Video URL
+                  </FormLabel>
+                  <InputGroup size="lg">
+                    <InputLeftElement pointerEvents="none">
+                      <Icon as={MdVideoLibrary} color="#FF0000" boxSize={6} />
                     </InputLeftElement>
-                    <Input
-                      type="url"
-                      name="videoUrl"
-                      placeholder="Enter YouTube video URL"
-                      value={url}
-                      onChange={(e) => setUrl(e.target.value)}
-                      isDisabled={loading}
-                    />
+                    <Box display="flex" w="100%" gap={2}>
+                      <Input
+                        type="url"
+                        name="videoUrl"
+                        placeholder="Paste a YouTube video URL..."
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        isDisabled={loading}
+                        bgGradient="linear(to-r, #FFF, #F9F9F9)"
+                        borderColor="#FF0000"
+                        _focus={{ borderColor: '#FF0000', boxShadow: '0 0 0 2px #FF0000' }}
+                        fontSize="md"
+                        fontWeight={500}
+                        borderRadius="md"
+                        pl={12}
+                        py={6}
+                        transition="box-shadow 0.2s"
+                        flex={1}
+                      />
+                      <Button
+                        type="submit"
+                        bg="#FF0000"
+                        color="white"
+                        isLoading={loading}
+                        loadingText="Analyzing..."
+                        size="lg"
+                        borderRadius="md"
+                        fontWeight={700}
+                        boxShadow="0 2px 8px rgba(255,0,0,0.10)"
+                        _hover={{ bg: '#CC0000' }}
+                        px={8}
+                        minW={40}
+                        ml={2}
+                      >
+                        🚀 Analyze
+                      </Button>
+                    </Box>
                   </InputGroup>
                 </FormControl>
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  isLoading={loading}
-                  width="full"
-                  loadingText="Analyzing comments..."
-                >
-                  Analyze Comments
-                </Button>
               </VStack>
             </form>
           </CardBody>
@@ -248,16 +274,54 @@ export default function Dashboard() {
           </Card>
         )}
 
+        {/* Empty state with showcases */}
+        {(!result && !loading && !error) && (
+          <Card boxShadow="md" borderRadius="xl" bgGradient="linear(to-br, #fff, #f9f9f9)" p={6} mt={4} w="full" maxW="3xl" alignSelf="center">
+            <CardBody>
+              <VStack spacing={6} align="center">
+                <Heading size="md" color="#FF0000">See What You Can Do!</Heading>
+                <Text color="gray.700" fontSize="lg" textAlign="center">
+                  Try analyzing a YouTube video to get insights like:
+                </Text>
+                <VStack spacing={4} align="stretch" w="100%">
+                  <Box p={4} bg="#FFF3F3" borderRadius="md" boxShadow="sm">
+                    <Text fontWeight="bold" color="#FF0000">🎯 Sentiment Analysis</Text>
+                    <Text color="gray.700">See the overall mood of your audience and how they react to your content.</Text>
+                  </Box>
+                  <Box p={4} bg="#F3F7FF" borderRadius="md" boxShadow="sm">
+                    <Text fontWeight="bold" color="#1E88E5">📊 Engagement Metrics</Text>
+                    <Text color="gray.700">Discover which comments drive the most engagement and what topics spark discussion.</Text>
+                  </Box>
+                  <Box p={4} bg="#FFF9E3" borderRadius="md" boxShadow="sm">
+                    <Text fontWeight="bold" color="#FFB300">💡 AI-Powered Recommendations</Text>
+                    <Text color="gray.700">Get actionable tips to improve your content and grow your channel.</Text>
+                  </Box>
+                </VStack>
+                <Text color="gray.500" fontSize="sm" mt={2}>
+                  Paste a YouTube video URL above and click <b>Analyze</b> to get started!
+                </Text>
+              </VStack>
+            </CardBody>
+          </Card>
+        )}
+
         {result && !loading && (
           <AnalysisResult
-            comments={result.comments}
-            statistics={result.statistics}
-            visualizations={result.sentiment_visualization}
-            ai_analysis={result.gemini_analysis}
-            analysisId={analysisId}
+            comments={result.comments || []}
+            statistics={result.statistics || { total_comments: 0, total_likes: 0, average_likes: 0 }}
+            visualizations={result.visualizations || {}}
+            ai_analysis={result.ai_analysis || {
+              sentiment_distribution: { positive: 0, neutral: 0, negative: 0 },
+              comment_categories: { questions: 0, praise: 0, suggestions: 0, complaints: 0, general: 0 },
+              engagement_metrics: { high_engagement: 0, medium_engagement: 0, low_engagement: 0 },
+              key_topics: [],
+              overall_analysis: { sentiment: 'Not available', engagement_level: 'Not available', community_health: 'Not available' },
+              recommendations: [],
+            }}
+            analysisId={result.id || analysisId}
           />
         )}
       </VStack>
     </DashboardLayout>
   )
-} 
+}

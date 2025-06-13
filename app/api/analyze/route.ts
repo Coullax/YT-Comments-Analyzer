@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     const isServerHealthy = await checkPythonServer();
     if (!isServerHealthy) {
       return NextResponse.json(
-        { error: 'Analysis server is not available. Please try again later.' },
+        { error: 'Analysis server is not available. Please try again later.', status: 'error' },
         { status: 503 }
       );
     }
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json(
-        { error: 'You must be signed in to analyze videos' },
+        { error: 'You must be signed in to analyze videos', status: 'error' },
         { status: 401 }
       );
     }
@@ -61,19 +61,22 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'User not found', status: 'error' },
         { status: 404 }
       );
     }
 
     // Check if free user has reached their limit
     if (user.userType === 'FREE') {
-      // If user has already analyzed a video
-      if (user.analysisCount > 0) {
-        return NextResponse.json({
-          error: 'Free users can only analyze one video. Please upgrade to PRO for unlimited analyses.',
-          upgradeRequired: true
-        }, { status: 403 });
+      if (user.analysisCount >= 1) { // Changed to >= 1 to match typical free tier limits
+        return NextResponse.json(
+          {
+            error: 'Free users can only analyze one video. Please upgrade to PRO for unlimited analyses.',
+            status: 'error',
+            upgradeRequired: true
+          },
+          { status: 403 }
+        );
       }
     }
 
@@ -81,14 +84,14 @@ export async function POST(req: Request) {
 
     if (!video_url) {
       return NextResponse.json(
-        { error: 'Video URL is required' },
+        { error: 'Video URL is required', status: 'error' },
         { status: 400 }
       );
     }
 
     if (!isValidYouTubeUrl(video_url)) {
       return NextResponse.json(
-        { error: 'Invalid YouTube URL' },
+        { error: 'Invalid YouTube URL', status: 'error' },
         { status: 400 }
       );
     }
@@ -97,7 +100,7 @@ export async function POST(req: Request) {
     const videoId = extractVideoId(video_url);
     if (!videoId) {
       return NextResponse.json(
-        { error: 'Could not extract video ID' },
+        { error: 'Could not extract video ID', status: 'error' },
         { status: 400 }
       );
     }
@@ -128,12 +131,12 @@ export async function POST(req: Request) {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout (increased for Gemini analysis)
+      const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minute timeout
 
       const pythonResponse = await fetch('http://127.0.0.1:8000/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           video_url,
           analysis_id: analysis.id
         }),
@@ -153,15 +156,14 @@ export async function POST(req: Request) {
       const updatedAnalysis = await prisma.analysis.update({
         where: { id: analysis.id },
         data: {
+          summary: 'Completed',
           sentiment: {
             status: 'completed',
-            comments: analysisResult.comments,
-            statistics: analysisResult.statistics,
-            visualization: analysisResult.sentiment_visualization,
-            geminiAnalysis: analysisResult.gemini_analysis,
             error: null
-          }
-        }
+          },
+          visualizations: analysisResult.visualizations, // Store as JSON object
+          aiAnalysis: analysisResult.ai_analysis, // Store as JSON object
+        },
       });
 
       // Return the full analysis result
@@ -169,8 +171,9 @@ export async function POST(req: Request) {
         ...updatedAnalysis,
         comments: analysisResult.comments,
         statistics: analysisResult.statistics,
-        visualization: analysisResult.sentiment_visualization,
-        geminiAnalysis: analysisResult.gemini_analysis
+        visualizations: analysisResult.visualizations,
+        ai_analysis: analysisResult.ai_analysis,
+        status: 'success'
       });
 
     } catch (error: any) {
@@ -197,9 +200,10 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { 
         error: error.message || 'Internal server error',
-        status: error.name === 'AbortError' ? 'timeout' : 'error'
+        status: error.name === 'AbortError' ? 'timeout' : 'error',
+        upgradeRequired: error.message?.includes('upgrade') // Set upgradeRequired based on message
       },
       { status: error.name === 'AbortError' ? 504 : 500 }
     );
   }
-} 
+}

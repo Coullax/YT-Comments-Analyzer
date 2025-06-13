@@ -29,6 +29,7 @@ import {
   FaArrowRight,
 } from 'react-icons/fa'
 import PricingCard from '@/components/PricingCard'
+import Navbar from '@/components/Navbar'
 
 const MotionBox = motion(Box)
 const MotionText = motion(Text)
@@ -65,6 +66,7 @@ export default function Home() {
   return (
     
     <Box>
+      <Navbar/>
       {/* Hero Section */}
       <Box bg={bgColor} minH="10vh" position="relative" overflow="hidden">
         <Container maxW="container.xl" py={20}>

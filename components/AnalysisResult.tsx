@@ -43,6 +43,7 @@ import {
   ModalBody,
   ModalCloseButton,
   Icon,
+  chakra,
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGSAP } from '@gsap/react';
@@ -50,12 +51,12 @@ import gsap from 'gsap';
 import { ResponsivePie } from '@nivo/pie';
 import { ResponsiveBar } from '@nivo/bar';
 import { ResponsiveRadar } from '@nivo/radar';
-import { 
-  MdThumbUp, 
-  MdInsights, 
-  MdTrendingUp, 
-  MdWarning, 
-  MdCheckCircle, 
+import {
+  MdThumbUp,
+  MdInsights,
+  MdTrendingUp,
+  MdWarning,
+  MdCheckCircle,
   MdInfo,
   MdChat,
   MdExpandMore,
@@ -66,7 +67,7 @@ import {
   MdSentimentDissatisfied,
   MdSentimentNeutral,
   MdCategory,
-  MdTrendingFlat
+  MdTrendingFlat,
 } from 'react-icons/md';
 import CommentChat from './CommentChat';
 import {
@@ -107,12 +108,25 @@ interface Comment {
     polarity: number;
     subjectivity: number;
   };
+  publishedAt?: string;
+  replies?: Comment[];
 }
 
 interface Statistics {
   total_comments: number;
   total_likes: number;
   average_likes: number;
+  engagement_rates?: {
+    high_engagement_rate: number;
+    medium_engagement_rate: number;
+    low_engagement_rate: number;
+  };
+  sentiment_metrics?: {
+    average_sentiment: number;
+    positive_rate: number;
+    neutral_rate: number;
+    negative_rate: number;
+  };
 }
 
 interface AIAnalysis {
@@ -145,27 +159,45 @@ interface AIAnalysis {
   recommendations: string[];
 }
 
+interface Visualizations {
+  sentiment_scatter?: string;
+  engagement_distribution?: string;
+  wordcloud?: string;
+  sentiment_timeline?: string;
+  category_distribution?: string;
+}
+
 interface AnalysisResultProps {
   comments: Comment[];
   statistics: Statistics;
-  visualizations: string;
+  visualizations: Visualizations;
   ai_analysis: AIAnalysis;
   analysisId: string;
 }
 
 const SentimentBadge = ({ polarity }: { polarity: number }) => {
-  let color = 'gray';
+  let color = 'gray.500';
   let text = 'Neutral';
 
   if (polarity > 0.3) {
-    color = 'green';
+    color = 'green.400';
     text = 'Positive';
   } else if (polarity < -0.3) {
-    color = 'red';
+    color = 'red.400';
     text = 'Negative';
   }
 
-  return <Badge colorScheme={color}>{text}</Badge>;
+  return (
+    <Badge
+      colorScheme={color}
+      px={3}
+      py={1}
+      borderRadius="full"
+      fontWeight="medium"
+    >
+      {text}
+    </Badge>
+  );
 };
 
 const MotionCard = motion(Card);
@@ -195,31 +227,36 @@ const AnimatedStat = ({ label, value, icon, color }: { label: string; value: num
   return (
     <MotionCard
       id={`stat-${label}`}
-      initial={{ scale: 0.9 }}
-      whileHover={{ scale: 1.05 }}
-      transition={{ duration: 0.2 }}
+    // bg={useColorModeValue('white', 'gray.700')}
+    // borderRadius="2xl"
+    // initial={{ scale: 0.9 }}
+    // whileHover={{ scale: 1.05, boxShadow: "xl" }}
+    // transition={{ duration: 0.3 }}
     >
-            <CardBody>
+      <CardBody>
         <StatGroup>
-              <Stat>
-            <HStack>
-              <Box color={color}>{icon}</Box>
-              <StatLabel fontSize="lg">{label}</StatLabel>
+          <Stat>
+            <HStack spacing={4}>
+              <Box color={color} fontSize="2xl">{icon}</Box>
+              <StatLabel fontSize="lg" color="gray.600">{label}</StatLabel>
             </HStack>
-            <StatNumber id={`stat-value-${label}`} fontSize="3xl">{value}</StatNumber>
-              </Stat>
+            <StatNumber id={`stat-value-${label}`} fontSize="4xl" color={color}>{value}</StatNumber>
+          </Stat>
         </StatGroup>
-            </CardBody>
+      </CardBody>
     </MotionCard>
   );
 };
 
 const AnimatedPieChart = ({ data }: { data: any }) => (
   <MotionBox
-    height="400px"
-    initial={{ opacity: 0, scale: 0.8 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.5 }}
+    height="600px"
+    bg={useColorModeValue('whiteAlpha.800', 'gray.800')}
+    borderRadius="xl"
+    p={4}
+  // initial={{ opacity: 0, scale: 0.8 }}
+  // animate={{ opacity: 1, scale: 1 }}
+  // transition={{ duration: 0.5 }}
   >
     <ResponsivePie
       data={data}
@@ -256,6 +293,9 @@ const AnimatedPieChart = ({ data }: { data: any }) => (
 const AnimatedBarChart = ({ data }: { data: any }) => (
   <MotionBox
     height="400px"
+    bg={useColorModeValue('whiteAlpha.800', 'gray.800')}
+    borderRadius="xl"
+    p={4}
     initial={{ opacity: 0, x: -50 }}
     animate={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.5 }}
@@ -293,7 +333,10 @@ const AnimatedBarChart = ({ data }: { data: any }) => (
 
 const AnimatedRadarChart = ({ data }: { data: any }) => (
   <MotionBox
-    height="400px"
+    height="600px"
+    bg={useColorModeValue('whiteAlpha.800', 'gray.800')}
+    borderRadius="xl"
+    p={4}
     initial={{ opacity: 0, rotate: -180 }}
     animate={{ opacity: 1, rotate: 0 }}
     transition={{ duration: 0.8, ease: "easeOut" }}
@@ -330,47 +373,48 @@ const AnimatedRadarChart = ({ data }: { data: any }) => (
 export default function AnalysisResult({
   comments = [],
   statistics = { total_comments: 0, total_likes: 0, average_likes: 0 },
-  visualizations = '',
+  visualizations = {},
   ai_analysis = {
     sentiment_distribution: { positive: 0, neutral: 0, negative: 0 },
-    comment_categories: {
-      questions: 0,
-      praise: 0,
-      suggestions: 0,
-      complaints: 0,
-      general: 0,
-    },
-    engagement_metrics: {
-      high_engagement: 0,
-      medium_engagement: 0,
-      low_engagement: 0,
-    },
+    comment_categories: { questions: 0, praise: 0, suggestions: 0, complaints: 0, general: 0 },
+    engagement_metrics: { high_engagement: 0, medium_engagement: 0, low_engagement: 0 },
     key_topics: [],
-    overall_analysis: {
-      sentiment: 'Not available',
-      engagement_level: 'Not available',
-      community_health: 'Not available',
-    },
+    overall_analysis: { sentiment: 'Not available', engagement_level: 'Not available', community_health: 'Not available' },
     recommendations: [],
   },
   analysisId = '',
 }: AnalysisResultProps) {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const bgGradient = useColorModeValue(
+    'linear(to-br, gray.50, white)',
+    'linear(to-br, gray.900, gray.800)'
+  );
+  const cardBg = useColorModeValue('white', 'gray.700');
+  const textColor = useColorModeValue('gray.800', 'gray.200');
   const [activeTab, setActiveTab] = useState(0);
   const { isOpen: isModalOpen, onOpen: onModalOpen, onClose: onModalClose } = useDisclosure();
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null);
-
+  const [isExpanded, setIsExpanded] = useState({ overview: true, analysis: true, comments: true });
+  const [currentPage, setCurrentPage] = useState(1);
+  const commentsPerPage = 5; // Adjust as needed
+  
+  // Pagination calculations
+  const indexOfLastComment = currentPage * commentsPerPage;
+  const indexOfFirstComment = indexOfLastComment - commentsPerPage;
+  const totalPages = Math.ceil(comments.length / commentsPerPage);
+  
+  // Pagination handlers
+  const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
   // Calculate percentages for sentiment distribution
-  const totalSentiments = 
+  const totalSentiments =
     ai_analysis.sentiment_distribution.positive +
     ai_analysis.sentiment_distribution.neutral +
     ai_analysis.sentiment_distribution.negative;
-  
+
   const sentimentPercentages = {
-    positive: ((ai_analysis.sentiment_distribution.positive / totalSentiments) * 100).toFixed(1),
-    neutral: ((ai_analysis.sentiment_distribution.neutral / totalSentiments) * 100).toFixed(1),
-    negative: ((ai_analysis.sentiment_distribution.negative / totalSentiments) * 100).toFixed(1),
+    positive: totalSentiments > 0 ? ((ai_analysis.sentiment_distribution.positive / totalSentiments) * 100).toFixed(1) : '0.0',
+    neutral: totalSentiments > 0 ? ((ai_analysis.sentiment_distribution.neutral / totalSentiments) * 100).toFixed(1) : '0.0',
+    negative: totalSentiments > 0 ? ((ai_analysis.sentiment_distribution.negative / totalSentiments) * 100).toFixed(1) : '0.0',
   };
 
   // Prepare data for visualizations
@@ -401,22 +445,13 @@ export default function AnalysisResult({
   }));
 
   const engagementData = [
-    {
-      category: 'High',
-      value: ai_analysis.engagement_metrics.high_engagement,
-    },
-    {
-      category: 'Medium',
-      value: ai_analysis.engagement_metrics.medium_engagement,
-    },
-    {
-      category: 'Low',
-      value: ai_analysis.engagement_metrics.low_engagement,
-    },
+    { category: 'High', value: ai_analysis.engagement_metrics.high_engagement },
+    { category: 'Medium', value: ai_analysis.engagement_metrics.medium_engagement },
+    { category: 'Low', value: ai_analysis.engagement_metrics.low_engagement },
   ];
 
   const getSentimentIcon = (sentiment: string) => {
-    switch(sentiment.toLowerCase()) {
+    switch (sentiment.toLowerCase()) {
       case 'predominantly positive':
         return MdSentimentSatisfied;
       case 'predominantly negative':
@@ -426,283 +461,516 @@ export default function AnalysisResult({
     }
   };
 
+  const renderVisualization = (vizType: string, base64Data?: string) => {
+    if (!base64Data) return <Text color="gray.500">No {vizType} data available</Text>;
+    return (
+      <Box position="relative" w="100%" h="800px">
+        <Image
+          src={`data:image/png;base64,${base64Data}`}
+          alt={`${vizType} visualization`}
+          w="full"
+          h="full"
+          objectFit="contain"
+          borderRadius="xl"
+        />
+        <Tooltip label={`Zoom into ${vizType}`}>
+          <IconButton
+            aria-label={`Zoom ${vizType}`}
+            icon={<MdZoomIn />}
+            size="sm"
+            position="absolute"
+            top={2}
+            right={2}
+            onClick={() => alert(`Zoom feature for ${vizType} coming soon!`)} // Placeholder for zoom functionality
+            colorScheme="blue"
+          />
+        </Tooltip>
+      </Box>
+    );
+  };
+
+  const toggleSection = (section: string) => {
+    setIsExpanded(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
   return (
     <AnimatePresence>
-      <Box>
-        <Tabs 
-          isFitted 
-          variant="enclosed" 
-          onChange={(index) => setActiveTab(index)}
-          colorScheme="blue"
+      <Box
+        bgGradient={bgGradient}
+        minH="100vh"
+        p={6}
+        color={textColor}
+      >
+        <chakra.h1
+          fontSize="4xl"
+          fontWeight="bold"
+          textAlign="center"
+          mb={8}
+          bgGradient="linear(to-r, blue.400, purple.500)"
+          bgClip="text"
+          textShadow="1px 1px 2px rgba(0, 0, 0, 0.1)"
         >
-          <TabList mb="1em">
-            <Tab><HStack><MdInsights />Overview</HStack></Tab>
-            <Tab><HStack><MdCategory />Analysis</HStack></Tab>
-            <Tab><HStack><MdPeople />Comments</HStack></Tab>
-            {analysisId && <Tab><HStack><MdChat />Chat</HStack></Tab>}
+          Video Analysis Dashboard
+        </chakra.h1>
+
+        <Tabs
+          isFitted
+          variant="soft-rounded"
+          colorScheme="blue"
+          borderRadius="xl"
+          overflow="hidden"
+          onChange={(index) => setActiveTab(index)}
+        >
+          <TabList mb={4}>
+            <Tab _selected={{ bg: 'blue.500', color: 'white' }}><HStack className='pl-4'><MdInsights /> Overview</HStack>Overview</Tab>
+            <Tab _selected={{ bg: 'blue.500', color: 'white' }}><HStack><MdCategory /> Analysis</HStack>Analysis</Tab>
+            <Tab _selected={{ bg: 'blue.500', color: 'white' }}><HStack><MdPeople /> Comments</HStack>Comments</Tab>
+            {analysisId && <Tab _selected={{ bg: 'blue.500', color: 'white' }}><HStack><MdChat /> Chat</HStack>Chat</Tab>}
           </TabList>
 
           <TabPanels>
             {/* Overview Panel */}
             <TabPanel>
-              <VStack spacing={6}>
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} width="full">
-                  <AnimatedStat
-                    label="Total Comments"
-                    value={statistics.total_comments}
-                    icon={<MdChat size={24} />}
-                    color="blue.500"
-                  />
-                  <AnimatedStat
-                    label="Total Likes"
-                    value={statistics.total_likes}
-                    icon={<MdThumbUp size={24} />}
-                    color="green.500"
-                  />
-                  <AnimatedStat
-                    label="Average Likes"
-                    value={statistics.average_likes}
-                    icon={<MdTrendingUp size={24} />}
-                    color="purple.500"
-                  />
-                </SimpleGrid>
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <VStack spacing={6} align="stretch">
+                  <Box
+                    p={6}
+                    bg={cardBg}
+                    borderRadius="2xl"
 
-                <MotionCard
-                  width="full"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <CardHeader>
-                    <Heading size="md">Sentiment Distribution</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <AnimatedPieChart data={sentimentData} />
-                  </CardBody>
-                </MotionCard>
-
-                {/* Community Health Card */}
-                <MotionCard width="full">
-                  <CardHeader>
-                    <Heading size="md">Community Health Overview</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-                      <VStack>
-                        <Icon 
-                          as={getSentimentIcon(ai_analysis.overall_analysis.sentiment)}
-                          boxSize={12}
+                    border="1px solid"
+                    borderColor={useColorModeValue('gray.200', 'gray.700')}
+                  >
+                    <HStack justify="space-between" mb={4}>
+                      <Heading size="md" color="blue.500">Quick Stats</Heading>
+                      <IconButton
+                        aria-label="Toggle Overview"
+                        icon={isExpanded.overview ? <MdExpandLess /> : <MdExpandMore />}
+                        onClick={() => toggleSection('overview')}
+                        colorScheme="blue"
+                        size="sm"
+                      />
+                    </HStack>
+                    <Collapse in={isExpanded.overview} animateOpacity>
+                      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                        <AnimatedStat
+                          label="Total Comments"
+                          value={statistics.total_comments}
+                          icon={<MdChat />}
                           color="blue.500"
                         />
-                        <Text fontWeight="bold">Sentiment</Text>
-                        <Text>{ai_analysis.overall_analysis.sentiment}</Text>
-                      </VStack>
-                      <VStack>
-                        <Icon as={MdTrendingUp} boxSize={12} color="green.500" />
-                        <Text fontWeight="bold">Engagement</Text>
-                        <Text>{ai_analysis.overall_analysis.engagement_level}</Text>
-                      </VStack>
-                      <VStack>
-                        <Icon as={MdPeople} boxSize={12} color="purple.500" />
-                        <Text fontWeight="bold">Community</Text>
-                        <Text>{ai_analysis.overall_analysis.community_health}</Text>
-                      </VStack>
-                    </SimpleGrid>
-                  </CardBody>
-                </MotionCard>
-              </VStack>
+                        <AnimatedStat
+                          label="Total Likes"
+                          value={statistics.total_likes}
+                          icon={<MdThumbUp />}
+                          color="green.500"
+                        />
+                        <AnimatedStat
+                          label="Average Likes"
+                          value={statistics.average_likes}
+                          icon={<MdTrendingUp />}
+                          color="purple.500"
+                        />
+                      </SimpleGrid>
+                    </Collapse>
+                  </Box>
+
+                  <MotionCard
+                    bg={cardBg}
+                    borderRadius="2xl"
+
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <CardHeader>
+                      <Heading size="md" color="blue.500">Sentiment Breakdown</Heading>
+                    </CardHeader>
+                    <CardBody >
+                      <AnimatedPieChart data={sentimentData} />
+                    </CardBody>
+                  </MotionCard>
+
+                  <MotionCard
+                    bg={cardBg}
+                    borderRadius="2xl"
+
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <CardHeader>
+                      <Heading size="md" color="blue.500">Sentiment Scatter</Heading>
+                    </CardHeader>
+                    <CardBody>
+                      {renderVisualization('sentiment_scatter', visualizations.sentiment_scatter)}
+                    </CardBody>
+                  </MotionCard>
+
+                  <MotionCard
+                    bg={cardBg}
+                    borderRadius="2xl"
+
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <CardHeader>
+                      <Heading size="md" color="blue.500">Community Insights</Heading>
+                    </CardHeader>
+                    <CardBody>
+                      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                        <VStack align="center" spacing={2}>
+                          <Icon as={getSentimentIcon(ai_analysis.overall_analysis.sentiment)} boxSize={12} color="blue.500" />
+                          <Text fontWeight="bold">Sentiment</Text>
+                          <Text>{ai_analysis.overall_analysis.sentiment}</Text>
+                        </VStack>
+                        <VStack align="center" spacing={2}>
+                          <Icon as={MdTrendingUp} boxSize={12} color="green.500" />
+                          <Text fontWeight="bold">Engagement</Text>
+                          <Text>{ai_analysis.overall_analysis.engagement_level}</Text>
+                        </VStack>
+                        <VStack align="center" spacing={2}>
+                          <Icon as={MdPeople} boxSize={12} color="purple.500" />
+                          <Text fontWeight="bold">Community</Text>
+                          <Text>{ai_analysis.overall_analysis.community_health}</Text>
+                        </VStack>
+                      </SimpleGrid>
+                    </CardBody>
+                  </MotionCard>
+                </VStack>
+              </MotionBox>
             </TabPanel>
 
             {/* Analysis Panel */}
             <TabPanel>
-              <VStack spacing={6}>
-                <MotionCard width="full">
-                  <CardHeader>
-                    <Heading size="md">Comment Categories</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <AnimatedRadarChart data={categoryData} />
-                  </CardBody>
-                </MotionCard>
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <VStack spacing={6} align="stretch">
+                  <Box
+                    p={6}
+                    bg={cardBg}
+                    borderRadius="2xl"
 
-                <MotionCard width="full">
-                  <CardHeader>
-                    <Heading size="md">Engagement Distribution</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <AnimatedBarChart data={engagementData} />
-                  </CardBody>
-                </MotionCard>
+                    border="1px solid"
+                    borderColor={useColorModeValue('gray.200', 'gray.700')}
+                  >
+                    <HStack justify="space-between" mb={4}>
+                      <Heading size="md" color="blue.500">Detailed Analysis</Heading>
+                      <IconButton
+                        aria-label="Toggle Analysis"
+                        icon={isExpanded.analysis ? <MdExpandLess /> : <MdExpandMore />}
+                        onClick={() => toggleSection('analysis')}
+                        colorScheme="blue"
+                        size="sm"
+                      />
+                    </HStack>
+                    <Collapse in={isExpanded.analysis} animateOpacity>
+                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Categories</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <AnimatedRadarChart data={categoryData} />
+                          {renderVisualization('category_distribution', visualizations.category_distribution)}
+                        </CardBody>
+                      </MotionCard>
 
-                {/* Key Topics */}
-                <MotionCard width="full">
-                  <CardHeader>
-                    <Heading size="md">Key Topics</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                      {ai_analysis.key_topics.map((topic, index) => (
-                        <MotionCard key={index} variant="outline">
-                          <CardBody>
-                            <VStack>
-                              <Text fontWeight="bold">{topic.topic}</Text>
-                              <CircularProgress 
-                                value={(topic.count / Math.max(...ai_analysis.key_topics.map(t => t.count))) * 100} 
-                                color="blue.400"
+                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Engagement</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <AnimatedBarChart data={engagementData} />
+                          {renderVisualization('engagement_distribution', visualizations.engagement_distribution)}
+                        </CardBody>
+                      </MotionCard>
+
+                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Word Cloud</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          {renderVisualization('wordcloud', visualizations.wordcloud)}
+                        </CardBody>
+                      </MotionCard>
+
+                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Sentiment Timeline</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          {renderVisualization('sentiment_timeline', visualizations.sentiment_timeline)}
+                        </CardBody>
+                      </MotionCard>
+
+                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Key Topics</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                            {ai_analysis.key_topics.map((topic, index) => (
+                              <MotionCard
+                                key={index}
+                                variant="outline"
+                                bg={cardBg}
+                                borderRadius="xl"
+                                whileHover={{ scale: 1.05, boxShadow: "md" }}
                               >
-                                <CircularProgressLabel>{topic.count}</CircularProgressLabel>
-                              </CircularProgress>
-                            </VStack>
-                          </CardBody>
-                        </MotionCard>
-                      ))}
-                    </SimpleGrid>
-                  </CardBody>
-                </MotionCard>
+                                <CardBody>
+                                  <VStack align="center">
+                                    <Text fontWeight="bold" color="blue.500">{topic.topic}</Text>
+                                    <CircularProgress
+                                      value={(topic.count / Math.max(...ai_analysis.key_topics.map(t => t.count), 1)) * 100}
+                                      color="blue.400"
+                                      thickness="10px"
+                                    >
+                                      <CircularProgressLabel>{topic.count}</CircularProgressLabel>
+                                    </CircularProgress>
+                                  </VStack>
+                                </CardBody>
+                              </MotionCard>
+                            ))}
+                          </SimpleGrid>
+                        </CardBody>
+                      </MotionCard>
 
-                {/* Recommendations */}
-                <MotionCard width="full">
-                  <CardHeader>
-                    <Heading size="md">Recommendations</Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                      <Box>
-                        <Heading size="sm" mb={4} color="green.500">Positive Insights</Heading>
-                        <List spacing={3}>
-                          {ai_analysis.recommendations
-                            .filter(rec => rec.startsWith('Positive:'))
-                            .map((rec, index) => (
-                              <ListItem key={index}>
-                                <HStack>
-                                  <ListIcon as={MdCheckCircle} color="green.500" />
-                                  <Text>{rec.replace('Positive:', '').trim()}</Text>
-                                </HStack>
-                              </ListItem>
-                            ))}
-                        </List>
-                      </Box>
-                      <Box>
-                        <Heading size="sm" mb={4} color="red.500">Areas for Improvement</Heading>
-                        <List spacing={3}>
-                          {ai_analysis.recommendations
-                            .filter(rec => rec.startsWith('Negative:') || !rec.startsWith('Positive:'))
-                            .map((rec, index) => (
-                              <ListItem key={index}>
-                                <HStack>
-                                  <ListIcon 
-                                    as={rec.startsWith('Negative:') ? MdWarning : MdInfo} 
-                                    color={rec.startsWith('Negative:') ? "red.500" : "blue.500"}
-                                  />
-                                  <Text>{rec.replace('Negative:', '').trim()}</Text>
-                                </HStack>
-                              </ListItem>
-                            ))}
-                        </List>
-                      </Box>
-                    </SimpleGrid>
-                  </CardBody>
-                </MotionCard>
-              </VStack>
+                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Recommendations</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                            <Box>
+                              <Heading size="sm" mb={4} color="green.500">Positive Insights</Heading>
+                              <List spacing={3}>
+                                {ai_analysis.recommendations
+                                  .filter(rec => rec.startsWith('Positive:'))
+                                  .map((rec, index) => (
+                                    <ListItem key={index}>
+                                      <HStack>
+                                        <ListIcon as={MdCheckCircle} color="green.500" />
+                                        <Text>{rec.replace('Positive:', '').trim()}</Text>
+                                      </HStack>
+                                    </ListItem>
+                                  ))}
+                              </List>
+                            </Box>
+                            <Box>
+                              <Heading size="sm" mb={4} color="red.500">Areas for Improvement</Heading>
+                              <List spacing={3}>
+                                {ai_analysis.recommendations
+                                  .filter(rec => rec.startsWith('Negative:') || !rec.startsWith('Positive:'))
+                                  .map((rec, index) => (
+                                    <ListItem key={index}>
+                                      <HStack>
+                                        <ListIcon
+                                          as={rec.startsWith('Negative:') ? MdWarning : MdInfo}
+                                          color={rec.startsWith('Negative:') ? "red.500" : "blue.500"}
+                                        />
+                                        <Text>{rec.replace('Negative:', '').trim()}</Text>
+                                      </HStack>
+                                    </ListItem>
+                                  ))}
+                              </List>
+                            </Box>
+                          </SimpleGrid>
+                        </CardBody>
+                      </MotionCard>
+                    </Collapse>
+                  </Box>
+                </VStack>
+              </MotionBox>
             </TabPanel>
 
             {/* Comments Panel */}
             <TabPanel>
-              <VStack spacing={4}>
-                {comments.map((comment, index) => (
-                  <MotionCard
-                    key={index}
-                    width="full"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <CardBody>
-                      <VStack align="start" spacing={2}>
-                        <HStack width="full">
-                          <Badge colorScheme="blue">{comment.author}</Badge>
-                          <Spacer />
-                          <HStack>
-                            <MdThumbUp />
-                            <Text>{comment.likes}</Text>
-                          </HStack>
-                        </HStack>
-                        <Text>{comment.text}</Text>
-                        <HStack width="full">
-                          <Badge
-                            colorScheme={
-                              comment.sentiment?.polarity > 0.3 ? 'green' :
-                              comment.sentiment?.polarity < -0.3 ? 'red' : 'gray'
-                            }
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Box
+                  p={6}
+                  bg={cardBg}
+                  borderRadius="2xl"
+                  border="1px solid"
+                  borderColor={useColorModeValue('gray.200', 'gray.700')}
+                >
+                  <HStack justify="space-between" mb={4}>
+                    <Heading size="md" color="blue.500">Comment Thread</Heading>
+                    <IconButton
+                      aria-label="Toggle Comments"
+                      icon={isExpanded.comments ? <MdExpandLess /> : <MdExpandMore />}
+                      onClick={() => toggleSection('comments')}
+                      colorScheme="blue"
+                      size="sm"
+                    />
+                  </HStack>
+                  <Collapse in={isExpanded.comments} animateOpacity>
+                    <VStack spacing={4}>
+                      {comments
+                        .slice(indexOfFirstComment, indexOfLastComment)
+                        .map((comment, index) => (
+                          <MotionCard
+                            key={index}
+                            width="full"
+                            bg={cardBg}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            whileHover={{ scale: 1.02, boxShadow: "lg" }}
                           >
-                            Sentiment: {comment.sentiment?.polarity.toFixed(2)}
-                          </Badge>
-                          <Spacer />
-                          <Button
-                            size="sm"
-                            leftIcon={<MdChat />}
-                            onClick={() => {
-                              setSelectedComment(comment);
-                              onModalOpen();
-                            }}
-                          >
-                            Discuss
-                          </Button>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                  </MotionCard>
-                ))}
-              </VStack>
+                            <CardBody>
+                              <VStack align="start" spacing={3}>
+                                <HStack width="full" justify="space-between">
+                                  <Badge colorScheme="blue" px={3} py={1} borderRadius="full">
+                                    {comment.author}
+                                  </Badge>
+                                  <HStack spacing={1}>
+                                    <MdThumbUp />
+                                    <Text fontWeight="medium">{comment.likes}</Text>
+                                  </HStack>
+                                </HStack>
+                                <Text fontSize="md" color={textColor}>{comment.text}</Text>
+                                <HStack width="full" justify="space-between">
+                                  <SentimentBadge polarity={comment.sentiment?.polarity || 0} />
+                                  <Button
+                                    size="sm"
+                                    leftIcon={<MdChat />}
+                                    onClick={() => {
+                                      setSelectedComment(comment);
+                                      onModalOpen();
+                                    }}
+                                    colorScheme="teal"
+                                    variant="outline"
+                                  >
+                                    Discuss
+                                  </Button>
+                                </HStack>
+                                {comment.replies && comment.replies.length > 0 && (
+                                  <Collapse in={true} animateOpacity>
+                                    <VStack align="start" mt={2} pl={6} borderLeft="2px solid" borderColor="gray.300">
+                                      {comment.replies.map((reply, replyIndex) => (
+                                        <HStack key={replyIndex} width="full" spacing={4}>
+                                          <Badge colorScheme="gray" px={2} py={1} borderRadius="full">
+                                            {reply.author}
+                                          </Badge>
+                                          <Text flex={1} fontSize="sm" color={textColor}>{reply.text}</Text>
+                                          <SentimentBadge polarity={reply.sentiment?.polarity || 0} />
+                                        </HStack>
+                                      ))}
+                                    </VStack>
+                                  </Collapse>
+                                )}
+                              </VStack>
+                            </CardBody>
+                          </MotionCard>
+                        ))}
+                      {/* Pagination Controls */}
+                      <HStack justify="center" spacing={4} mt={4}>
+                        <Button
+                          onClick={prevPage}
+                          isDisabled={currentPage === 1}
+                          colorScheme="gray"
+                          variant="outline"
+                        >
+                          Previous
+                        </Button>
+                        <Text>
+                          Page {currentPage} of {totalPages}
+                        </Text>
+                        <Button
+                          onClick={nextPage}
+                          isDisabled={currentPage === totalPages}
+                          colorScheme="gray"
+                          variant="outline"
+                        >
+                          Next
+                        </Button>
+                      </HStack>
+                    </VStack>
+                  </Collapse>
+                </Box>
 
-              {/* Comment Discussion Modal */}
-              <Modal isOpen={isModalOpen} onClose={onModalClose} size="xl">
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>Discuss Comment</ModalHeader>
-                  <ModalCloseButton />
-                  <ModalBody pb={6}>
-                    {selectedComment && (
-                      <VStack align="start" spacing={4}>
-                        <Card width="full" variant="outline">
-                          <CardBody>
-                            <Text>{selectedComment.text}</Text>
-                            <HStack mt={2}>
-                              <Badge colorScheme="blue">{selectedComment.author}</Badge>
-                              <Badge colorScheme="green">
-                                {selectedComment.likes} likes
-                              </Badge>
-                            </HStack>
-                          </CardBody>
-                        </Card>
-                        <CommentChat 
-                          analysisId={analysisId} 
-                          initialQuestion={`What can you tell me about this comment: "${selectedComment.text}"?`}
-                        />
-                      </VStack>
-                    )}
-                  </ModalBody>
-                </ModalContent>
-              </Modal>
+                {/* Comment Discussion Modal */}
+                <Modal isOpen={isModalOpen} onClose={onModalClose} size="2xl" isCentered>
+                  <ModalOverlay backdropFilter="blur(10px)" />
+                  <ModalContent bg={cardBg} borderRadius="2xl" >
+                    <ModalHeader color="blue.500">Discuss This Comment</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody pb={6}>
+                      {selectedComment && (
+                        <VStack align="start" spacing={6}>
+                          <Card width="full" bg={useColorModeValue('gray.50', 'gray.600')} borderRadius="xl" >
+                            <CardBody>
+                              <Text fontSize="lg" color={textColor}>{selectedComment.text}</Text>
+                              <HStack mt={4} spacing={4}>
+                                <Badge colorScheme="blue" px={3} py={1} borderRadius="full">
+                                  {selectedComment.author}
+                                </Badge>
+                                <Badge colorScheme="green" px={3} py={1} borderRadius="full">
+                                  {selectedComment.likes} likes
+                                </Badge>
+                              </HStack>
+                            </CardBody>
+                          </Card>
+                          <CommentChat
+                            analysisId={analysisId}
+                            initialQuestion={`What can you tell me about this comment: "${selectedComment.text}"?`}
+                          />
+                        </VStack>
+                      )}
+                    </ModalBody>
+                  </ModalContent>
+                </Modal>
+              </MotionBox>
             </TabPanel>
 
             {/* Chat Panel */}
             {analysisId && (
               <TabPanel>
-                <CommentChat analysisId={analysisId} />
-            </TabPanel>
+                <MotionBox
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Box
+                    p={6}
+                    bg={cardBg}
+                    borderRadius="2xl"
+                    border="1px solid"
+                    borderColor={useColorModeValue('gray.200', 'gray.700')}
+                  >
+                    <CommentChat analysisId={analysisId} />
+                  </Box>
+                </MotionBox>
+              </TabPanel>
             )}
           </TabPanels>
         </Tabs>
 
         {/* Debug information */}
-        {process.env.NODE_ENV === 'development' && (
-          <Box mt={4} p={2} bg="gray.50" borderRadius="md" fontSize="sm">
+        {/* {process.env.NODE_ENV === 'development' && (
+          <Box
+            mt={6}
+            p={4}
+            bg={useColorModeValue('gray.50', 'gray.700')}
+            borderRadius="xl"
+            boxShadow="md"
+          >
             <Text color="gray.600">Analysis ID: {analysisId || 'None'}</Text>
           </Box>
-        )}
-    </Box>
+        )} */}
+      </Box>
     </AnimatePresence>
   );
-} 
+}

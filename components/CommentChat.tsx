@@ -272,7 +272,7 @@ export default function CommentChat({ analysisId, initialQuestion }: CommentChat
                 icon={<MdSend />}
                 isLoading={loading}
                 colorScheme="blue"
-                height="100%"
+                height="60px"
               />
             </HStack>
           </form>

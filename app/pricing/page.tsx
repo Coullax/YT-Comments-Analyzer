@@ -13,7 +13,7 @@ import {
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import PricingCard from '@/components/PricingCard'
-import DashboardLayout from '../components/DashboardLayout'
+import DashboardLayout from '@/components/DashboardLayout'
 
 export default function PricingPage() {
   const { data: session, status } = useSession()

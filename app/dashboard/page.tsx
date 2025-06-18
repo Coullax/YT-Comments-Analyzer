@@ -178,7 +178,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <VStack spacing={8} align="stretch">
+      <VStack spacing={8} align="center" >
         <Box>
           <Heading size="lg" mb={2}>
             Analyze YouTube Comments

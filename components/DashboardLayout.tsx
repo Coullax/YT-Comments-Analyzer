@@ -53,7 +53,7 @@ const LinkItems: Array<LinkItemProps> = [
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   return (
-    <Box minH="100vh" bg={useColorModeValue('gray.100', 'gray.900')}>
+    <Box minH="100vh" bg={useColorModeValue('gray.100', 'gray.900')} style={{background: "f0f4ff"}}>
       <SidebarContent
         onClose={() => onClose}
         display={{ base: 'none', md: 'block' }}
@@ -65,6 +65,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         returnFocusOnClose={false}
         onOverlayClick={onClose}
         size="full"
+        
       >
         <DrawerContent>
           <SidebarContent onClose={onClose} />
@@ -84,44 +85,89 @@ interface SidebarProps extends BoxProps {
 }
 
 const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
-  const { data: session } = useSession()
-  const pathname = usePathname()
-  const router = useRouter()
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <Box
-      transition="3s ease"
-      bg={useColorModeValue('white', 'gray.900')}
-      borderRight="1px"
-      borderRightColor={useColorModeValue('gray.200', 'gray.700')}
-      w={{ base: 'full', md: 60 }}
+      transition="all 0.3s ease"
+      bg={useColorModeValue(
+        'rgba(255, 255, 255, 0.1)', // Light mode: subtle glassmorphism
+        'rgba(26, 32, 44, 0.1)', // Dark mode: subtle glassmorphism
+      )}
+      backdropFilter="blur(12px)" // Glassmorphism blur effect
+      borderRight="1px solid"
+      borderRightColor={useColorModeValue('rgba(229, 231, 235, 0.2)', 'rgba(55, 65, 81, 0.2)')}
+      w={{ base: 'full', md: '280px' }} // Wider sidebar for modern look
       pos="fixed"
       h="full"
+      boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+      zIndex={10}
       {...rest}
+      sx={{
+        '&::-webkit-scrollbar': { width: '6px' },
+        '&::-webkit-scrollbar-thumb': {
+          bg: useColorModeValue('gray.300', 'gray.600'),
+          borderRadius: 'full',
+        },
+      }}
     >
-      <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Text fontSize="2xl" fontFamily="monospace" fontWeight="bold">
+      <Flex h="16" alignItems="center" px={6} justifyContent="space-between" borderBottom="1px solid" borderBottomColor={useColorModeValue('gray.100', 'gray.700')}>
+        <Text
+          fontSize="xl"
+          fontWeight="black"
+          letterSpacing="0.05em"
+          bgGradient="linear(to-r, #6B46C1, #3B82F6)"
+          bgClip="text"
+        >
           YT Analyzer
         </Text>
-        <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />
+        <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color={useColorModeValue('gray.600', 'gray.300')} />
       </Flex>
-      <VStack spacing={4} align="stretch">
+      <VStack spacing={1} align="stretch" px={3} py={4} overflowY="auto" h="calc(100% - 64px)">
         {LinkItems.map((link) => (
-          <NavItem 
-            key={link.name} 
-            icon={link.icon} 
+          <NavItem
+            key={link.name}
+            icon={link.icon}
             path={link.path}
             isActive={pathname === link.path}
+            _hover={{
+              bg: useColorModeValue('gray.100', 'gray.700'),
+              transform: 'translateX(4px)',
+              transition: 'all 0.2s ease',
+            }}
+            sx={{
+              borderRadius: 'md',
+              px: 4,
+              py: 3,
+              fontWeight: 'medium',
+              color: useColorModeValue(
+                pathname === link.path ? 'purple.600' : 'gray.700',
+                pathname === link.path ? 'purple.300' : 'gray.300',
+              ),
+              bg: pathname === link.path ? useColorModeValue('purple.50', 'purple.900') : 'transparent',
+              transition: 'all 0.3s ease',
+            }}
           >
             {link.name}
           </NavItem>
         ))}
         {session?.user?.email && (
-          <Box px={4} mt="auto">
+          <Box px={3} mt="auto" mb={4}>
             <Button
-              variant="outline"
-              colorScheme="red"
+              variant="solid"
+              size="md"
               width="full"
+              bgGradient="linear(to-r, #EF4444, #DC2626)"
+              color="white"
+              _hover={{
+                bgGradient: 'linear(to-r, #DC2626, #B91C1C)',
+                transform: 'scale(1.02)',
+                boxShadow: 'md',
+              }}
+              _active={{ transform: 'scale(0.98)' }}
+              transition="all 0.2s ease"
               onClick={() => signOut()}
             >
               Sign Out
@@ -130,8 +176,9 @@ const SidebarContent = ({ onClose, ...rest }: SidebarProps) => {
         )}
       </VStack>
     </Box>
-  )
-}
+  );
+};
+
 
 interface NavItemProps extends FlexProps {
   icon: IconType

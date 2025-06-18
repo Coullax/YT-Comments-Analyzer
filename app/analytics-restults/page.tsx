@@ -58,40 +58,57 @@ const AnalyticsResultsPage: React.FC = () => {
     const Modal: React.FC<{ result: AnalyticsResult; onClose: () => void }> = ({ result, onClose }) => (
         <div style={{
             position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.5)", display: "flex",
-            alignItems: "center", justifyContent: "center", zIndex: 1000
+            backgroundColor: "rgba(0, 0, 0, 0.6)", display: "flex",
+            alignItems: "center", justifyContent: "center", zIndex: 1000,
+            padding: 20
         }}>
             <div style={{
-                background: "#fff", padding: 24, borderRadius: 12,
-                maxWidth: 700, width: "90%", maxHeight: "90vh", overflowY: "auto"
+                background: "#ffffff", padding: 32, borderRadius: 16,
+                maxWidth: 720, width: "100%", maxHeight: "90vh", overflowY: "auto",
+                boxShadow: "0 12px 32px rgba(0, 0, 0, 0.2)", position: "relative"
             }}>
                 <button onClick={onClose} style={{
-                    float: "right", background: "none", border: "none", fontSize: 24, cursor: "pointer"
-                }}>×</button>
+                    position: "absolute", top: 16, right: 16,
+                    background: "#f2f2f2", border: "none", borderRadius: "50%",
+                    width: 36, height: 36, fontSize: 20, fontWeight: "bold",
+                    cursor: "pointer", color: "#333", transition: "background 0.2s"
+                }}
+                        onMouseOver={(e) => (e.currentTarget.style.background = "#e0e0e0")}
+                        onMouseOut={(e) => (e.currentTarget.style.background = "#f2f2f2")}
+                >×</button>
 
-                <h2 style={{ marginTop: 0 }}>Detailed Analysis</h2>
-                <p><strong>Video:</strong> <a href={result.videoUrl} target="_blank" rel="noopener noreferrer">{result.videoId}</a></p>
-                <p><strong>Date:</strong> {new Date(result.createdAt).toLocaleString()}</p>
-                <p><strong>Sentiment:</strong> {result.aiAnalysis.overall_analysis.sentiment}</p>
-                <p><strong>Community Health:</strong> {result.aiAnalysis.overall_analysis.community_health}</p>
+                <h2 style={{ marginTop: 0, fontSize: 24, fontWeight: 700 }}>🧠 Detailed Analysis</h2>
 
-                <h4>Sentiment Distribution</h4>
-                <ul>{Object.entries(result.aiAnalysis.sentiment_distribution).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+                <div style={{ marginBottom: 16 }}>
+                    <p><strong>🎥 Video:</strong> <a href={result.videoUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", textDecoration: "none" }}>{result.videoId}</a></p>
+                    <p><strong>📅 Date:</strong> {new Date(result.createdAt).toLocaleString()}</p>
+                    <p><strong>😊 Sentiment:</strong> {result.aiAnalysis.overall_analysis.sentiment}</p>
+                    <p><strong>💬 Community Health:</strong> {result.aiAnalysis.overall_analysis.community_health}</p>
+                </div>
 
-                <h4>Comment Categories</h4>
-                <ul>{Object.entries(result.aiAnalysis.comment_categories).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+                <hr style={{ border: "1px solid #eee" }} />
 
-                <h4>Engagement Metrics</h4>
-                <ul>{Object.entries(result.aiAnalysis.engagement_metrics).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
-
-                <h4>Key Topics</h4>
-                <ul>{result.aiAnalysis.key_topics.map((t) => <li key={t.topic}>{t.topic}: {t.count}</li>)}</ul>
-
-                <h4>Recommendations</h4>
-                <ul>{result.aiAnalysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
+                <Section title="📊 Sentiment Distribution" data={result.aiAnalysis.sentiment_distribution} />
+                <Section title="🗂️ Comment Categories" data={result.aiAnalysis.comment_categories} />
+                <Section title="📈 Engagement Metrics" data={result.aiAnalysis.engagement_metrics} />
+                <Section title="🔑 Key Topics" dataArray={result.aiAnalysis.key_topics.map(t => `${t.topic}: ${t.count}`)} />
+                <Section title="✅ Recommendations" dataArray={result.aiAnalysis.recommendations} />
             </div>
         </div>
     );
+
+    const Section: React.FC<{ title: string; data?: Record<string, any>; dataArray?: string[] }> = ({ title, data, dataArray }) => (
+        <div style={{ marginTop: 24 }}>
+            <h4 style={{ fontSize: 18, marginBottom: 8, color: "#333" }}>{title}</h4>
+            <ul style={{ paddingLeft: 20, margin: 0 }}>
+                {data
+                    ? Object.entries(data).map(([k, v]) => <li key={k} style={{ marginBottom: 4 }}>{k}: <strong>{v}</strong></li>)
+                    : dataArray?.map((item, i) => <li key={i} style={{ marginBottom: 4 }}>{item}</li>)
+                }
+            </ul>
+        </div>
+    );
+
 
 
     return (
@@ -157,16 +174,16 @@ const AnalyticsResultsPage: React.FC = () => {
                                         <img src={thumbnailUrl} alt="Thumbnail"
                                              style={{width: 480, height: 360, borderRadius: 8, objectFit: "cover"}}/>
                                         <div style={{flex: 1}}>
-                                            <h3 style={{margin: 0, color: "#223366"}}>{result.videoId}</h3>
-                                            <p style={{
-                                                fontSize: 13,
-                                                color: "#6b7a99"
-                                            }}>{new Date(result.createdAt).toLocaleString()}</p>
-                                            <p style={{margin: "8px 0", fontSize: 14}}>
-                                                <strong>Sentiment:</strong> {result.aiAnalysis.overall_analysis.sentiment} |&nbsp;
-                                                <strong>Praise:</strong> {result.aiAnalysis.comment_categories.praise || 0} |&nbsp;
-                                                <strong>Complaints:</strong> {result.aiAnalysis.comment_categories.complaints || 0}
-                                            </p>
+                                            {/*<h3 style={{margin: 0, color: "#223366"}}>{result.videoId}</h3>*/}
+                                            {/*<p style={{*/}
+                                            {/*    fontSize: 13,*/}
+                                            {/*    color: "#6b7a99"*/}
+                                            {/*}}>{new Date(result.createdAt).toLocaleString()}</p>*/}
+                                            {/*<p style={{margin: "8px 0", fontSize: 14}}>*/}
+                                            {/*    <strong>Sentiment:</strong> {result.aiAnalysis.overall_analysis.sentiment} |&nbsp;*/}
+                                            {/*    <strong>Praise:</strong> {result.aiAnalysis.comment_categories.praise || 0} |&nbsp;*/}
+                                            {/*    <strong>Complaints:</strong> {result.aiAnalysis.comment_categories.complaints || 0}*/}
+                                            {/*</p>*/}
                                             <p style={{fontSize: 12, color: "#888"}}>Click to view full analysis →</p>
                                         </div>
                                     </li>

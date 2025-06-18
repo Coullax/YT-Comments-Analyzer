@@ -2,18 +2,35 @@
 
 import DashboardLayout from "@/components/DashboardLayout";
 import React, { useEffect, useState } from "react";
+import {getServerSession} from "next-auth";
+import {authOptions} from "@/app/api/auth/[...nextauth]/route";
+import {NextResponse} from "next/server";
 
 type AnalyticsResult = {
     id: string;
     summary: string;
     createdAt: string;
-    // Add other fields as needed
+    videoUrl: string;
+    videoId: string;
+    aiAnalysis: {
+        comment_categories: Record<string, number>;
+        engagement_metrics: Record<string, number>;
+        key_topics: { topic: string; count: number }[];
+        overall_analysis: {
+            community_health: string;
+            engagement_level: string;
+            sentiment: string;
+        };
+        sentiment_distribution: Record<string, number>;
+        recommendations: string[];
+    };
 };
+
 
 const PAGE_SIZE = 10;
 
 async function fetchAnalyticsResults(page: number, pageSize: number): Promise<{ results: AnalyticsResult[]; total: number }> {
-    const res = await fetch(`/api/analytics-results?page=${page}&pageSize=${pageSize}`);
+    const res = await fetch(`/api/analytics-results?page=${page+1}&pageSize=${pageSize}`);
     if (!res.ok) throw new Error('Failed to fetch analytics results');
     const data = await res.json();
     return { results: data.data, total: data.total };
@@ -24,6 +41,8 @@ const AnalyticsResultsPage: React.FC = () => {
     const [page, setPage] = useState(0);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [selectedResult, setSelectedResult] = useState<AnalyticsResult | null>(null);
+
 
     useEffect(() => {
         setLoading(true);
@@ -35,6 +54,45 @@ const AnalyticsResultsPage: React.FC = () => {
     }, [page]);
 
     const totalPages = Math.ceil(total / PAGE_SIZE);
+
+    const Modal: React.FC<{ result: AnalyticsResult; onClose: () => void }> = ({ result, onClose }) => (
+        <div style={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)", display: "flex",
+            alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+            <div style={{
+                background: "#fff", padding: 24, borderRadius: 12,
+                maxWidth: 700, width: "90%", maxHeight: "90vh", overflowY: "auto"
+            }}>
+                <button onClick={onClose} style={{
+                    float: "right", background: "none", border: "none", fontSize: 24, cursor: "pointer"
+                }}>×</button>
+
+                <h2 style={{ marginTop: 0 }}>Detailed Analysis</h2>
+                <p><strong>Video:</strong> <a href={result.videoUrl} target="_blank" rel="noopener noreferrer">{result.videoId}</a></p>
+                <p><strong>Date:</strong> {new Date(result.createdAt).toLocaleString()}</p>
+                <p><strong>Sentiment:</strong> {result.aiAnalysis.overall_analysis.sentiment}</p>
+                <p><strong>Community Health:</strong> {result.aiAnalysis.overall_analysis.community_health}</p>
+
+                <h4>Sentiment Distribution</h4>
+                <ul>{Object.entries(result.aiAnalysis.sentiment_distribution).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+
+                <h4>Comment Categories</h4>
+                <ul>{Object.entries(result.aiAnalysis.comment_categories).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+
+                <h4>Engagement Metrics</h4>
+                <ul>{Object.entries(result.aiAnalysis.engagement_metrics).map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+
+                <h4>Key Topics</h4>
+                <ul>{result.aiAnalysis.key_topics.map((t) => <li key={t.topic}>{t.topic}: {t.count}</li>)}</ul>
+
+                <h4>Recommendations</h4>
+                <ul>{result.aiAnalysis.recommendations.map((r, i) => <li key={i}>{r}</li>)}</ul>
+            </div>
+        </div>
+    );
+
 
     return (
         // <div style={{ display: "flex", minHeight: "100vh", background: "#f7f9fb" }}>
@@ -81,29 +139,43 @@ const AnalyticsResultsPage: React.FC = () => {
                     ) : results.length === 0 ? (
                         <div style={{ textAlign: "center", padding: 40, color: "#bbb" }}>No analytics results found.</div>
                     ) : (
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                            {results.map((result) => (
-                                <li key={result.id} style={{
-                                    marginBottom: 20,
-                                    borderRadius: 12,
-                                    background: "linear-gradient(90deg, #e3eafe 0%, #f7f9fb 100%)",
-                                    boxShadow: "0 2px 8px rgba(80,120,200,0.06)",
-                                    padding: 20,
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 6,
-                                }}>
-                                    <div style={{ fontWeight: 600, fontSize: 18, color: "#223366" }}>
-                                        {result.summary}
-                                    </div>
-                                    <div style={{ fontSize: 13, color: "#6b7a99" }}>
-                                        {new Date(result.createdAt).toLocaleString()}
-                                    </div>
-                                </li>
-                            ))}
+                        <ul style={{listStyle: "none", padding: 0, margin: 0}}>
+                            {results.map((result) => {
+                                const thumbnailUrl = `https://img.youtube.com/vi/${result.videoId}/0.jpg`;
+                                return (
+                                    <li key={result.id} onClick={() => setSelectedResult(result)} style={{
+                                        display: "flex",
+                                        gap: 20,
+                                        background: "#fff",
+                                        borderRadius: 12,
+                                        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                                        padding: 16,
+                                        cursor: "pointer",
+                                        marginBottom: 20,
+                                        transition: "transform 0.2s ease-in-out",
+                                    }}>
+                                        <img src={thumbnailUrl} alt="Thumbnail"
+                                             style={{width: 480, height: 360, borderRadius: 8, objectFit: "cover"}}/>
+                                        <div style={{flex: 1}}>
+                                            <h3 style={{margin: 0, color: "#223366"}}>{result.videoId}</h3>
+                                            <p style={{
+                                                fontSize: 13,
+                                                color: "#6b7a99"
+                                            }}>{new Date(result.createdAt).toLocaleString()}</p>
+                                            <p style={{margin: "8px 0", fontSize: 14}}>
+                                                <strong>Sentiment:</strong> {result.aiAnalysis.overall_analysis.sentiment} |&nbsp;
+                                                <strong>Praise:</strong> {result.aiAnalysis.comment_categories.praise || 0} |&nbsp;
+                                                <strong>Complaints:</strong> {result.aiAnalysis.comment_categories.complaints || 0}
+                                            </p>
+                                            <p style={{fontSize: 12, color: "#888"}}>Click to view full analysis →</p>
+                                        </div>
+                                    </li>
+                                );
+                            })}
                         </ul>
+
                     )}
-                    <div style={{ marginTop: 32, display: "flex", justifyContent: "center", gap: 16 }}>
+                    <div style={{marginTop: 32, display: "flex", justifyContent: "center", gap: 16}}>
                         <button
                             onClick={() => setPage((p) => Math.max(0, p - 1))}
                             disabled={page === 0}
@@ -120,7 +192,7 @@ const AnalyticsResultsPage: React.FC = () => {
                         >
                             ← Previous
                         </button>
-                        <span style={{ alignSelf: "center", fontWeight: 500, color: "#3358e0" }}>
+                        <span style={{alignSelf: "center", fontWeight: 500, color: "#3358e0"}}>
                             Page {page + 1} of {totalPages}
                         </span>
                         <button
@@ -140,9 +212,13 @@ const AnalyticsResultsPage: React.FC = () => {
                             Next →
                         </button>
                     </div>
+                    {selectedResult && (
+                        <Modal result={selectedResult} onClose={() => setSelectedResult(null)} />
+                    )}
+
                 </div>
             </main>
-        </DashboardLayout>
+</DashboardLayout>
     );
 };
 

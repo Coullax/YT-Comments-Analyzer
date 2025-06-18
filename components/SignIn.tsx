@@ -21,13 +21,13 @@ export default function SignIn() {
 
   useEffect(() => {
     if (session) {
-      router.push('/')
+      router.push('/dashboard')
     }
   }, [session, router])
 
   const handleSignIn = async () => {
     try {
-      await signIn('google', { callbackUrl: '/' })
+      await signIn('google', { callbackUrl: '/dashboard' })
       
     } catch (error) {
       toast({

@@ -263,7 +263,7 @@ export default function YouTubeThumbnails() {
                                         _hover={{ bg: '#CC0000' }}
                                         px={8}
                                     >
-                                        🚀 Fetch Thumbnails
+                                        🚀 Analyze Channel
                                     </Button>
                                 </VStack>
                             </form>

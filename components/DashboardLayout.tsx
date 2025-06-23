@@ -36,6 +36,7 @@ import {
 import { IconType } from 'react-icons'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
+import { GrChannel } from "react-icons/gr";
 
 interface LinkItemProps {
   name: string
@@ -46,9 +47,10 @@ interface LinkItemProps {
 const LinkItems: Array<LinkItemProps> = [
   { name: 'Home', icon: FiHome, path: '/dashboard' },
   { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-restults' },
+  { name: 'channel', icon: GrChannel , path: '/channel' },
   { name: 'History', icon: FiCompass, path: '/dashboard/history' },
   { name: 'Settings', icon: FiSettings, path: '/dashboard/settings' },
-  { name: 'channel', icon: FiSettings, path: '/channel' },
+
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

@@ -48,6 +48,7 @@ const LinkItems: Array<LinkItemProps> = [
   { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-restults' },
   { name: 'History', icon: FiCompass, path: '/dashboard/history' },
   { name: 'Settings', icon: FiSettings, path: '/dashboard/settings' },
+  { name: 'channel', icon: FiSettings, path: '/channel' },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

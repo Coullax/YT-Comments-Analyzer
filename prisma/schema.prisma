@@ -38,32 +38,48 @@ model Session {
 }
 
 model User {
-  id               String     @id @default(auto()) @map("_id") @db.ObjectId
+  id               String        @id @default(auto()) @map("_id") @db.ObjectId
   name             String?
-  email            String?    @unique
+  email            String?       @unique
   emailVerified    DateTime?
   image            String?
   accounts         Account[]
   sessions         Session[]
   analyses         Analysis[]
   subscription     Subscription?
-  userType         UserType   @default(FREE)
-  analysisCount    Int        @default(0)
+  userType         UserType      @default(FREE)
+  analysisCount    Int           @default(0)
   lastAnalysisDate DateTime?
 }
 
+// model Analysis {
+//   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+//   userId    String   @db.ObjectId
+//   videoUrl  String
+//   videoId   String
+//   summary   String
+//   sentiment   Json     @default("{}")
+//   visualizations Json? // New field for visualizations
+//   aiAnalysis  Json?   // New field for AI analysis
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+// }
+
 model Analysis {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  videoUrl  String
-  videoId   String
-  summary   String
-  sentiment   Json     @default("{}")
-  visualizations Json? // New field for visualizations
-  aiAnalysis  Json?   // New field for AI analysis
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  videoUrl       String
+  videoId        String
+  summary        String
+  sentiment      Json     @default("{}")
+  visualizations Json? // Stores visualization data
+  aiAnalysis     Json? // Stores AI analysis results
+  comments       Json? // Stores comments data
+  statistics     Json? // Stores statistics data
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -84,11 +100,11 @@ model Subscription {
   stripeCustomerId     String?
   stripeSubscriptionId String?
   currentPeriodEnd     DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 enum UserType {
   FREE
   PRO
-} 
+}

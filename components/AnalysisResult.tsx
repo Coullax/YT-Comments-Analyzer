@@ -382,6 +382,7 @@ export default function AnalysisResult({
     key_topics: [],
     overall_analysis: { sentiment: 'Not available', engagement_level: 'Not available', community_health: 'Not available' },
     recommendations: [],
+    positiveInsights: [],
   },
   analysisId = '',
 }: AnalysisResultProps) {

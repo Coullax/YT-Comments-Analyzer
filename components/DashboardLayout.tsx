@@ -48,7 +48,7 @@ const LinkItems: Array<LinkItemProps> = [
   { name: 'Home', icon: FiHome, path: '/dashboard' },
   { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-restults' },
   { name: 'channel', icon: GrChannel , path: '/channel' },
-  { name: 'History', icon: FiCompass, path: '/dashboard/history' },
+  { name: 'Upgrade', icon: FiCompass, path: '/pricing' },
   { name: 'Settings', icon: FiSettings, path: '/dashboard/settings' },
 
 ]

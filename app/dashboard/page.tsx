@@ -100,7 +100,8 @@ export default function Dashboard() {
     const fetchSubscription = async () => {
       if (session?.user?.email) {
         try {
-          const response = await fetch('/api/subscription')
+          const response = await fetch('/api/subscription', {
+            method: 'POST',})
           const data = await response.json()
           setUserSubscription(data)
         } catch (error) {

@@ -85,7 +85,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Channel URL is required' }, { status: 400 });
         }
 
-        // If action is 'save', save the channel URL
         if (action === 'save') {
             const channelId = await getChannelIdFromUrl(channelUrl);
 

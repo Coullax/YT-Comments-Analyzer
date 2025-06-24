@@ -1,81 +1,67 @@
-// app/actions/unsubscribe.ts
-'use server'
-
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { PrismaClient } from '@prisma/client'
 import Stripe from 'stripe'
+import { prisma } from '@/lib/prisma'
+import { authOptions } from '../auth/[...nextauth]/route'
 
-const prisma = new PrismaClient()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 })
 
-export async function handleUnSubscription() {
+export async function POST(req: Request) {
   try {
-    // Get the authenticated user session
     const session = await getServerSession(authOptions)
-    
     if (!session?.user?.email) {
-      throw new Error('Unauthorized: Please sign in to unsubscribe')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Find the user with their subscription
     const user = await prisma.user.findUnique({
-      where: {
-        email: session.user.email
-      },
-      include: {
-        subscription: true
-      }
+      where: { email: session.user.email },
+      include: { subscription: true }
     })
 
-    if (!user) {
-      throw new Error('User not found')
+    if (!user || !user.subscription || user.subscription.plan !== 'pro') {
+      return NextResponse.json({ error: 'No active Pro subscription' }, { status: 400 })
     }
 
-    if (!user.subscription) {
-      throw new Error('No active subscription found')
+    const subscriptionId = user.subscription.stripeSubscriptionId
+    const stripeCustomerId = user.subscription.stripeCustomerId
+
+    if (!subscriptionId || !stripeCustomerId) {
+      return NextResponse.json({ error: 'Missing Stripe subscription data' }, { status: 400 })
     }
 
-    // If user has a Stripe subscription, cancel it
-    if (user.subscription.stripeSubscriptionId) {
-      try {
-        // Cancel the subscription at period end (so user keeps access until billing period ends)
-        await stripe.subscriptions.update(user.subscription.stripeSubscriptionId, {
-          cancel_at_period_end: true,
-        })
-      } catch (stripeError) {
-        console.error('Stripe cancellation error:', stripeError)
-        // Continue with local cancellation even if Stripe fails
-      }
-    }
+    // ❌ Cancel Stripe subscription
+    await stripe.subscriptions.cancel(subscriptionId)
 
-    // Update the subscription status in database
+    // 🗑️ Delete subscription record or mark as canceled
     await prisma.subscription.update({
-      where: {
-        userId: user.id
-      },
+      where: { userId: user.id },
       data: {
-        status: 'cancelled',
-        updatedAt: new Date()
+        plan: 'free',
+        status: 'canceled',
+        stripeSubscriptionId: null,
+        stripeCustomerId: null
       }
     })
 
-    // Update user type to FREE
+    // 🧹 Update user to FREE
     await prisma.user.update({
-      where: {
-        id: user.id
-      },
+      where: { id: user.id },
       data: {
-        userType: 'FREE'
+        userType: 'FREE',
+        analysisCount: 0,
+        lastAnalysisDate: null
       }
     })
 
-    return { success: true, message: 'Subscription cancelled successfully' }
+    return NextResponse.json({ success: true, message: 'Subscription canceled successfully' })
 
-  } catch (error) {
-    console.error('Unsubscribe error:', error)
-    throw new Error(error instanceof Error ? error.message : 'Failed to cancel subscription')
+  } catch (error: any) {
+    console.error('Unsubscribe error:', error.message)
+    return NextResponse.json(
+      { error: error.message || 'Failed to cancel subscription' },
+      { status: 500 }
+    )
   }
 }

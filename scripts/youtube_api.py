@@ -962,7 +962,12 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
                 "recommendation1",
                 "recommendation2",
                 "recommendation3"
-            ]
+            ],
+            "positiveInsights":[
+                "Positive Insight 1",
+                "Positive Insight 2",
+                "Positive Insight 3"
+            ],
         }}
 
         Rules:

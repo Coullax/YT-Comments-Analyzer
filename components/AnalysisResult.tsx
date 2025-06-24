@@ -157,6 +157,7 @@ interface AIAnalysis {
     community_health: string;
   };
   recommendations: string[];
+  positiveInsights: string[];
 }
 
 interface Visualizations {
@@ -743,43 +744,46 @@ export default function AnalysisResult({
                         </CardBody>
                       </MotionCard>
 
-                      <MotionCard bg={cardBg} borderRadius="2xl" >
+                      <MotionCard bg={cardBg} borderRadius="2xl">
                         <CardHeader>
                           <Heading size="md" color="blue.500">Recommendations</Heading>
                         </CardHeader>
                         <CardBody>
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                            <Box>
-                              <Heading size="sm" mb={4} color="green.500">Positive Insights</Heading>
-                              <List spacing={3}>
-                                {ai_analysis.recommendations
-                                  .filter(rec => rec.startsWith('Positive:'))
-                                  .map((rec, index) => (
-                                    <ListItem key={index}>
-                                      <HStack>
-                                        <ListIcon as={MdCheckCircle} color="green.500" />
-                                        <Text>{rec.replace('Positive:', '').trim()}</Text>
-                                      </HStack>
-                                    </ListItem>
-                                  ))}
-                              </List>
-                            </Box>
+                            {/* Positive Insights - only show if there are any */}
+                            {ai_analysis?.positiveInsights?.length > 0 && (
+                                <Box>
+                                  <Heading size="sm" mb={4} color="green.500">Positive Insights</Heading>
+                                  <List spacing={3}>
+                                    {ai_analysis.positiveInsights.map((rec, index) => (
+                                        <ListItem key={index}>
+                                          <HStack>
+                                            <ListIcon as={MdCheckCircle} color="green.500" />
+                                            <Text>{rec}</Text>
+                                          </HStack>
+                                        </ListItem>
+                                    ))}
+                                  </List>
+                                </Box>
+                            )}
+
+                            {/* Areas for Improvement */}
                             <Box>
                               <Heading size="sm" mb={4} color="red.500">Areas for Improvement</Heading>
                               <List spacing={3}>
                                 {ai_analysis.recommendations
-                                  .filter(rec => rec.startsWith('Negative:') || !rec.startsWith('Positive:'))
-                                  .map((rec, index) => (
-                                    <ListItem key={index}>
-                                      <HStack>
-                                        <ListIcon
-                                          as={rec.startsWith('Negative:') ? MdWarning : MdInfo}
-                                          color={rec.startsWith('Negative:') ? "red.500" : "blue.500"}
-                                        />
-                                        <Text>{rec.replace('Negative:', '').trim()}</Text>
-                                      </HStack>
-                                    </ListItem>
-                                  ))}
+                                    .filter(rec => rec.startsWith('Negative:') || !rec.startsWith('Positive:'))
+                                    .map((rec, index) => (
+                                        <ListItem key={index}>
+                                          <HStack>
+                                            <ListIcon
+                                                as={rec.startsWith('Negative:') ? MdWarning : MdInfo}
+                                                color={rec.startsWith('Negative:') ? "red.500" : "blue.500"}
+                                            />
+                                            <Text>{rec.replace('Negative:', '').trim()}</Text>
+                                          </HStack>
+                                        </ListItem>
+                                    ))}
                               </List>
                             </Box>
                           </SimpleGrid>

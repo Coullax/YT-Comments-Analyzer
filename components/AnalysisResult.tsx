@@ -494,6 +494,7 @@ export default function AnalysisResult({
   };
 
   const toggleSection = (section: string) => {
+    // @ts-ignore
     setIsExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
@@ -804,7 +805,7 @@ export default function AnalysisResult({
                                     {ai_analysis.futureImprovementsSuggests.map((rec, index) => (
                                         <ListItem key={index}>
                                           <HStack>
-                                            <ListIcon as={MdCheckCircle} color="green.500" />
+                                            <ListIcon as={MdInfo} color="red.500" />
                                             <Text>{rec}</Text>
                                           </HStack>
                                         </ListItem>

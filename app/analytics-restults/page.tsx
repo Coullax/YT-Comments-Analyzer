@@ -1,243 +1,3 @@
-// //
-// // "use client";
-// //
-// // import DashboardLayout from "@/components/DashboardLayout";
-// // import React, { useEffect, useState } from "react";
-// // import { getServerSession } from "next-auth";
-// // import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-// // import { NextResponse } from "next/server";
-// // import AnalysisResult from "@/components/AnalysisResult";
-// // import {
-// //     Box,
-// //     Modal,
-// //     ModalOverlay,
-// //     ModalContent,
-// //     ModalHeader,
-// //     ModalCloseButton,
-// //     ModalBody,
-// //     useDisclosure,
-// // } from '@chakra-ui/react';
-// //
-// // type Comment = {
-// //     text: string;
-// //     author: string;
-// //     likes: number;
-// //     sentiment: {
-// //         polarity: number;
-// //         subjectivity: number;
-// //     };
-// //     publishedAt?: string;
-// //     replies?: Comment[];
-// // };
-// //
-// // type Statistics = {
-// //     total_comments: number;
-// //     total_likes: number;
-// //     average_likes: number;
-// //     engagement_rates?: {
-// //         high_engagement_rate: number;
-// //         medium_engagement_rate: number;
-// //         low_engagement_rate: number;
-// //     };
-// //     sentiment_metrics?: {
-// //         average_sentiment: number;
-// //         positive_rate: number;
-// //         neutral_rate: number;
-// //         negative_rate: number;
-// //     };
-// // };
-// //
-// // type AIAnalysis = {
-// //     sentiment_distribution: {
-// //         positive: number;
-// //         neutral: number;
-// //         negative: number;
-// //     };
-// //     comment_categories: {
-// //         questions: number;
-// //         praise: number;
-// //         suggestions: number;
-// //         complaints: number;
-// //         general: number;
-// //     };
-// //     engagement_metrics: {
-// //         high_engagement: number;
-// //         medium_engagement: number;
-// //         low_engagement: number;
-// //     };
-// //     key_topics: Array<{
-// //         topic: string;
-// //         count: number;
-// //     }>;
-// //     overall_analysis: {
-// //         sentiment: string;
-// //         engagement_level: string;
-// //         community_health: string;
-// //     };
-// //     recommendations: string[];
-// // };
-// //
-// // type Visualizations = {
-// //     sentiment_scatter?: string;
-// //     engagement_distribution?: string;
-// //     wordcloud?: string;
-// //     sentiment_timeline?: string;
-// //     category_distribution?: string;
-// // };
-// //
-// // type AnalyticsResult = {
-// //     id: string;
-// //     summary: string;
-// //     createdAt: string;
-// //     videoUrl: string;
-// //     videoId: string;
-// //     comments: Comment[];
-// //     statistics: Statistics;
-// //     visualizations: Visualizations;
-// //     aiAnalysis: AIAnalysis;
-// // };
-// //
-// // const PAGE_SIZE = 10;
-// //
-// // async function fetchAnalyticsResults(page: number, pageSize: number): Promise<{ results: AnalyticsResult[]; total: number }> {
-// //     const res = await fetch(`/api/analytics-results?page=${page + 1}&pageSize=${pageSize}`);
-// //     if (!res.ok) throw new Error('Failed to fetch analytics results');
-// //     const data = await res.json();
-// //     return { results: data.data, total: data.total };
-// // }
-// //
-// // const AnalyticsResultsPage: React.FC = () => {
-// //     const [results, setResults] = useState<AnalyticsResult[]>([]);
-// //     const [page, setPage] = useState(0);
-// //     const [total, setTotal] = useState(0);
-// //     const [loading, setLoading] = useState(false);
-// //     const { isOpen, onOpen, onClose } = useDisclosure();
-// //     const [selectedResult, setSelectedResult] = useState<AnalyticsResult | null>(null);
-// //
-// //     useEffect(() => {
-// //         setLoading(true);
-// //         fetchAnalyticsResults(page, PAGE_SIZE).then(({ results, total }) => {
-// //             setResults(results);
-// //             setTotal(total);
-// //             setLoading(false);
-// //         }).catch(error => {
-// //             console.error('Error fetching analytics:', error);
-// //             setLoading(false);
-// //         });
-// //     }, [page]);
-// //
-// //     const totalPages = Math.ceil(total / PAGE_SIZE);
-// //
-// //     return (
-// //         <DashboardLayout>
-// //             <main style={{ flex: 1, padding: "40px 0", display: "flex", flexDirection: "column", alignItems: "center" }}>
-// //                 <div style={{ width: "100%", maxWidth: 1200, background: "#fff", borderRadius: 16, boxShadow: "0 4px 24px rgba(80,120,200,0.08)", padding: 32 }}>
-// //                     <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#3358e0", letterSpacing: 1 }}>
-// //                         Previous Analytics Results
-// //                     </h2>
-// //                     {loading ? (
-// //                         <div style={{ textAlign: "center", padding: 40, color: "#888" }}>Loading...</div>
-// //                     ) : results.length === 0 ? (
-// //                         <div style={{ textAlign: "center", padding: 40, color: "#bbb" }}>No analytics results found.</div>
-// //                     ) : (
-// //                         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-// //                             {results.map((result) => {
-// //                                 const thumbnailUrl = `https://img.youtube.com/vi/${result.videoId}/0.jpg`;
-// //                                 return (
-// //                                     <li
-// //                                         key={result.id}
-// //                                         onClick={() => {
-// //                                             setSelectedResult(result);
-// //                                             onOpen();
-// //                                         }}
-// //                                         style={{
-// //                                             display: "flex",
-// //                                             gap: 20,
-// //                                             background: "#fff",
-// //                                             borderRadius: 12,
-// //                                             boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-// //                                             padding: 16,
-// //                                             cursor: "pointer",
-// //                                             marginBottom: 20,
-// //                                             transition: "transform 0.2s ease-in-out",
-// //                                         }}
-// //                                         onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
-// //                                         onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-// //                                     >
-// //                                         <img
-// //                                             src={thumbnailUrl}
-// //                                             alt="Thumbnail"
-// //                                             style={{ width: 480, height: 360, borderRadius: 8, objectFit: "cover" }}
-// //                                         />
-// //                                     </li>
-// //                                 );
-// //                             })}
-// //                         </ul>
-// //                     )}
-// //                     <div style={{ marginTop: 32, display: "flex", justifyContent: "center", gap: 16 }}>
-// //                         <button
-// //                             onClick={() => setPage((p) => Math.max(0, p - 1))}
-// //                             disabled={page === 0}
-// //                             style={{
-// //                                 padding: "10px 20px",
-// //                                 borderRadius: 8,
-// //                                 border: "none",
-// //                                 background: page === 0 ? "#e3eafe" : "#4f8cff",
-// //                                 color: page === 0 ? "#b3c0e0" : "#fff",
-// //                                 fontWeight: 600,
-// //                                 cursor: page === 0 ? "not-allowed" : "pointer",
-// //                                 transition: "background 0.2s",
-// //                             }}
-// //                         >
-// //                             ← Previous
-// //                         </button>
-// //                         <span style={{ alignSelf: "center", fontWeight: 500, color: "#3358e0" }}>
-// //               Page {page + 1} of {totalPages}
-// //             </span>
-// //                         <button
-// //                             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-// //                             disabled={page >= totalPages - 1}
-// //                             style={{
-// //                                 padding: "10px 20px",
-// //                                 borderRadius: 8,
-// //                                 border: "none",
-// //                                 background: page >= totalPages - 1 ? "#e3eafe" : "#4f8cff",
-// //                                 color: page >= totalPages - 1 ? "#b3c0e0" : "#fff",
-// //                                 fontWeight: 600,
-// //                                 cursor: page >= totalPages - 1 ? "not-allowed" : "pointer",
-// //                                 transition: "background 0.2s",
-// //                             }}
-// //                         >
-// //                             Next →
-// //                         </button>
-// //                     </div>
-// //                 </div>
-// //
-// //                 {selectedResult && (
-// //                     <Modal isOpen={isOpen} onClose={onClose} size="full">
-// //                         <ModalOverlay backdropFilter="blur(10px)" />
-// //                         <ModalContent bg="transparent" maxW="90%" borderRadius="2xl">
-// //                             <ModalHeader color="blue.500">Video Analysis Details</ModalHeader>
-// //                             <ModalCloseButton color="white" />
-// //                             <ModalBody pb={6}>
-// //                                 <AnalysisResult
-// //                                     analysisId={selectedResult.id}
-// //                                     comments={selectedResult.comments}
-// //                                     statistics={selectedResult.statistics}
-// //                                     visualizations={selectedResult.visualizations}
-// //                                     ai_analysis={selectedResult.aiAnalysis}
-// //                                 />
-// //                             </ModalBody>
-// //                         </ModalContent>
-// //                     </Modal>
-// //                 )}
-// //             </main>
-// //         </DashboardLayout>
-// //     );
-// // };
-// //
-// // export default AnalyticsResultsPage;
-//
 // 'use client';
 //
 // import React, { useEffect, useState } from 'react';
@@ -261,6 +21,7 @@
 //     ModalCloseButton,
 //     ModalBody,
 //     useDisclosure,
+//     useToast,
 // } from '@chakra-ui/react';
 // import { useSession } from 'next-auth/react';
 // import { useRouter } from 'next/navigation';
@@ -324,6 +85,7 @@
 //         community_health: string;
 //     };
 //     recommendations: string[];
+//     positiveInsights: string[];
 // };
 //
 // type Visualizations = {
@@ -364,6 +126,7 @@
 //     const [selectedResult, setSelectedResult] = useState<AnalyticsResult | null>(null);
 //     const { data: session, status } = useSession();
 //     const router = useRouter();
+//     const toast = useToast();
 //
 //     // Redirect if not authenticated
 //     useEffect(() => {
@@ -382,9 +145,15 @@
 //             })
 //             .catch(error => {
 //                 console.error('Error fetching analytics:', error);
+//                 toast({
+//                     title: 'Error',
+//                     description: error.message || 'Failed to fetch analytics results',
+//                     status: 'error',
+//                     duration: 5000,
+//                 });
 //                 setLoading(false);
 //             });
-//     }, [page]);
+//     }, [page, toast]);
 //
 //     const totalPages = Math.ceil(total / PAGE_SIZE);
 //
@@ -517,9 +286,11 @@
 //
 // export default AnalyticsResultsPage;
 
+
+
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Box,
     Container,
@@ -546,6 +317,8 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import AnalysisResult from '@/components/AnalysisResult';
+import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isEqual } from 'lodash';
 
 type Comment = {
     text: string;
@@ -629,6 +402,17 @@ type AnalyticsResult = {
 
 const PAGE_SIZE = 10;
 
+// Create a QueryClient instance
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+            cacheTime: 30 * 60 * 1000, // Cache persists for 30 minutes
+            retry: 1, // Retry failed requests once
+        },
+    },
+});
+
 async function fetchAnalyticsResults(page: number, pageSize: number): Promise<{ results: AnalyticsResult[]; total: number }> {
     const res = await fetch(`/api/analytics-results?page=${page + 1}&pageSize=${pageSize}`);
     if (!res.ok) throw new Error('Failed to fetch analytics results');
@@ -636,44 +420,58 @@ async function fetchAnalyticsResults(page: number, pageSize: number): Promise<{ 
     return { results: data.data, total: data.total };
 }
 
-const AnalyticsResultsPage: React.FC = () => {
-    const [results, setResults] = useState<AnalyticsResult[]>([]);
+const AnalyticsResultsContent: React.FC = () => {
     const [page, setPage] = useState(0);
-    const [total, setTotal] = useState(0);
-    const [loading, setLoading] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [selectedResult, setSelectedResult] = useState<AnalyticsResult | null>(null);
     const { data: session, status } = useSession();
     const router = useRouter();
     const toast = useToast();
+    const queryClient = useQueryClient();
 
     // Redirect if not authenticated
-    useEffect(() => {
+    React.useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/');
         }
     }, [status, router]);
 
-    useEffect(() => {
-        setLoading(true);
-        fetchAnalyticsResults(page, PAGE_SIZE)
-            .then(({ results, total }) => {
-                setResults(results);
-                setTotal(total);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching analytics:', error);
+    // Fetch data using React Query
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['analyticsResults', page], // Unique key for caching, changes with page
+        queryFn: () => fetchAnalyticsResults(page, PAGE_SIZE),
+        keepPreviousData: true, // Keep previous data while fetching new page
+        refetchOnMount: 'always', // Always refetch when component mounts
+        onSuccess: (newData) => {
+            // Compare new data with cached data
+            const cachedData = queryClient.getQueryData(['analyticsResults', page]);
+            if (cachedData && !isEqual(cachedData, newData)) {
+                // Update cache if data has changed
+                queryClient.setQueryData(['analyticsResults', page], newData);
                 toast({
-                    title: 'Error',
-                    description: error.message || 'Failed to fetch analytics results',
-                    status: 'error',
-                    duration: 5000,
+                    title: 'Data Updated',
+                    description: 'New analytics results have been loaded.',
+                    status: 'info',
+                    duration: 3000,
                 });
-                setLoading(false);
-            });
-    }, [page, toast]);
+            }
+        },
+    });
 
+    // Handle error
+    React.useEffect(() => {
+        if (error) {
+            toast({
+                title: 'Error',
+                description: error.message || 'Failed to fetch analytics results',
+                status: 'error',
+                duration: 5000,
+            });
+        }
+    }, [error, toast]);
+
+    const results = data?.results || [];
+    const total = data?.total || 0;
     const totalPages = Math.ceil(total / PAGE_SIZE);
 
     const handleThumbnailClick = (result: AnalyticsResult) => {
@@ -695,7 +493,7 @@ const AnalyticsResultsPage: React.FC = () => {
                     </Box>
 
                     {/* Results Grid */}
-                    {loading ? (
+                    {isLoading ? (
                         <Center p={8}>
                             <VStack spacing={4}>
                                 <Spinner size="xl" color="#FF0000" />
@@ -742,7 +540,7 @@ const AnalyticsResultsPage: React.FC = () => {
                     )}
 
                     {/* Pagination Controls */}
-                    {!loading && results.length > 0 && (
+                    {!isLoading && results.length > 0 && (
                         <Box mt={8} display="flex" justifyContent="center" alignItems="center" gap={4}>
                             <Button
                                 onClick={() => setPage(p => Math.max(0, p - 1))}
@@ -800,6 +598,15 @@ const AnalyticsResultsPage: React.FC = () => {
                 </VStack>
             </Container>
         </DashboardLayout>
+    );
+};
+
+// Wrap the component with QueryClientProvider
+const AnalyticsResultsPage: React.FC = () => {
+    return (
+        <QueryClientProvider client={queryClient}>
+            <AnalyticsResultsContent />
+        </QueryClientProvider>
     );
 };
 

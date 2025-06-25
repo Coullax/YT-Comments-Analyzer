@@ -511,7 +511,7 @@ const AnalyticsResultsContent: React.FC = () => {
                     ) : (
                         <Box w="full">
                             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                                {results.map(result => (
+                                {results.map(result=> (
                                     <Card
                                         key={result.id}
                                         boxShadow="md"

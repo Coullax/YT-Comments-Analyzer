@@ -59,7 +59,7 @@ const LinkItems: Array<LinkItemProps> = [
   { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-results', badge: 'New', badgeColor: 'green' },
   { name: 'Channel', icon: GrChannel, path: '/channel' },
   { name: 'Upgrade', icon: FiCompass, path: '/pricing', badge: 'Pro', badgeColor: 'purple' },
-  { name: 'Settings', icon: FiSettings, path: '/dashboard/settings' },
+  { name: 'Settings', icon: FiSettings, path: '/settings' },
 ]
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -579,7 +579,7 @@ const MobileNav = ({ onOpen, subscription, ...rest }: MobileProps) => {
           >
             <MenuItem 
               icon={<FiUser />}
-              onClick={() => router.push('/dashboard/profile')}
+              onClick={() => router.push('/profile')}
               _hover={{ bg: useColorModeValue('gray.50', 'gray.700') }}
               borderRadius="md"
               mx={2}

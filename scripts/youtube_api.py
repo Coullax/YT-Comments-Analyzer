@@ -993,6 +993,11 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
                 "Positive Insight 2",
                 "Positive Insight 3"
             ],
+            "futureImprovementsSuggests":[
+                "suggestion 1",
+                "suggestion 1",
+                "suggestion 1"
+            ],
         }}
         Rules:
         1. All numbers must be actual counts, not percentages

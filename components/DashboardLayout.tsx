@@ -58,6 +58,7 @@ const LinkItems: Array<LinkItemProps> = [
   { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
   { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-results', badge: 'New', badgeColor: 'green' },
   { name: 'Channel', icon: GrChannel, path: '/channel' },
+  { name: 'Compare', icon: GrChannel, path: '/compare-videos' },
   { name: 'Upgrade', icon: FiCompass, path: '/pricing', badge: 'Pro', badgeColor: 'purple' },
   { name: 'Settings', icon: FiSettings, path: '/settings' },
 ]

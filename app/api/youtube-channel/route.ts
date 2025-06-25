@@ -49,8 +49,11 @@ async function getVideoIds(playlistId: string, maxResults: number = 50): Promise
     let nextPageToken: string | null = null;
 
     do {
+        // @ts-ignore
         const url = `${YOUTUBE_API_BASE_URL}/playlistItems?part=contentDetails&playlistId=${playlistId}&maxResults=${maxResults}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}&key=${YOUTUBE_API_KEY}`;
+        // @ts-ignore
         const response = await fetch(url);
+        // @ts-ignore
         const data = await response.json();
 
         if (data.items) {

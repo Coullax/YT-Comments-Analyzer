@@ -158,6 +158,7 @@ interface AIAnalysis {
   };
   recommendations: string[];
   positiveInsights: string[];
+  futureImprovementsSuggests: string[];
 }
 
 interface Visualizations {
@@ -383,6 +384,7 @@ export default function AnalysisResult({
     overall_analysis: { sentiment: 'Not available', engagement_level: 'Not available', community_health: 'Not available' },
     recommendations: [],
     positiveInsights: [],
+    futureImprovementsSuggests: [],
   },
   analysisId = '',
 }: AnalysisResultProps) {
@@ -790,6 +792,28 @@ export default function AnalysisResult({
                           </SimpleGrid>
                         </CardBody>
                       </MotionCard>
+                      {ai_analysis?.futureImprovementsSuggests?.length > 0 && (<MotionCard bg={cardBg} borderRadius="2xl">
+                        <CardHeader>
+                          <Heading size="md" color="blue.500">Improvement Suggestions</Heading>
+                        </CardHeader>
+                        <CardBody>
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                            {/* Positive Insights - only show if there are any */}
+                                <Box>
+                                  <List spacing={3}>
+                                    {ai_analysis.futureImprovementsSuggests.map((rec, index) => (
+                                        <ListItem key={index}>
+                                          <HStack>
+                                            <ListIcon as={MdCheckCircle} color="green.500" />
+                                            <Text>{rec}</Text>
+                                          </HStack>
+                                        </ListItem>
+                                    ))}
+                                  </List>
+                                </Box>
+                          </SimpleGrid>
+                        </CardBody>
+                      </MotionCard>)}
                     </Collapse>
                   </Box>
                 </VStack>

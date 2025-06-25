@@ -40,9 +40,9 @@ export default function Home() {
   const bgColor = useColorModeValue('gray.50', 'gray.900')
 
   React.useEffect(() => {
-    // if (status === 'authenticated') {
-    //   router.push('/dashboard')
-    // }
+    if (status === 'authenticated') {
+      router.push('/dashboard')
+    }
   }, [status, router])
 
   const features = [

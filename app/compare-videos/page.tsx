@@ -279,6 +279,7 @@ import {
 import { useSession } from 'next-auth/react';
 import { MdCheck, MdClose, MdArrowDropDown } from 'react-icons/md';
 import DashboardLayout from '@/components/DashboardLayout';
+import {router} from "next/client";
 
 interface Analysis {
     id: string;
@@ -297,6 +298,10 @@ interface Comparison {
     comment_categories_comparison: string;
     community_health_comparison: string;
     other_insights: string;
+}
+interface ErrorResponse {
+    error: string
+    upgradeRequired?: boolean
 }
 
 const extractVideoId = (url: string): string | null => {
@@ -318,9 +323,24 @@ export default function CompareVideos() {
     const [analyses, setAnalyses] = useState<Analysis[]>([]);
     const [comparison, setComparison] = useState<Comparison | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<ErrorResponse | null>(null)
+    const [userSubscription, setUserSubscription] = useState<{ plan: string } | null>(null)
     const toast = useToast();
 
     useEffect(() => {
+        const fetchSubscription = async () => {
+            if (session?.user?.email) {
+                try {
+                    const response = await fetch('/api/subscription', {
+                        method: 'POST',})
+                    const data = await response.json()
+                    setUserSubscription(data)
+                } catch (error) {
+                    console.error('Error fetching subscription:', error)
+                }
+            }
+        }
+        fetchSubscription()
         if (session) fetchAnalyses();
     }, [session]);
 
@@ -331,6 +351,7 @@ export default function CompareVideos() {
             const data = await res.json();
             setAnalyses(data.analyses || []);
         } catch (err: any) {
+            console.error('Analysis error:', err)
             toast({
                 title: 'Error',
                 description: err.message || 'Failed to fetch saved analyses',
@@ -387,12 +408,12 @@ export default function CompareVideos() {
             const data = await res.json();
             setComparison(data.comparison);
         } catch (err: any) {
-            toast({
-                title: 'Comparison Error',
-                description: err.message || 'An error occurred',
-                status: 'error',
-                isClosable: true,
-            });
+            const errorMessage = err instanceof Error ? err.message : 'Failed to analyze video'
+            setError({
+                error: errorMessage,
+                upgradeRequired: errorMessage.includes('upgrade to PRO')
+            })
+
         } finally {
             setLoading(false);
         }
@@ -733,6 +754,25 @@ export default function CompareVideos() {
                         </Card>
                     )}
                 </VStack>
+                {error && (
+                    <Card bg={error.upgradeRequired ? 'orange.50' : 'red.50'}>
+                        <CardBody>
+                            <VStack spacing={4}>
+                                <Text color={error.upgradeRequired ? 'orange.800' : 'red.800'}>
+                                    {error.error}
+                                </Text>
+                                {error.upgradeRequired && userSubscription?.plan !== 'pro' && (
+                                    <Button
+                                        colorScheme="orange"
+                                        onClick={() => router.push('/pricing')}
+                                    >
+                                        Upgrade to PRO
+                                    </Button>
+                                )}
+                            </VStack>
+                        </CardBody>
+                    </Card>
+                )}
             </Container>
         </DashboardLayout>
     );

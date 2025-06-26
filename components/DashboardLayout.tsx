@@ -54,15 +54,6 @@ interface LinkItemProps {
   comingSoon?: boolean
 }
 
-const LinkItems: Array<LinkItemProps> = [
-  { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
-  { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-results', badge: 'New', badgeColor: 'green' },
-  { name: 'Channel', icon: GrChannel, path: '/channel' },
-  { name: 'Compare', icon: GrCommand, path: '/compare-videos' },
-  { name: 'Upgrade', icon: FiCompass, path: '/pricing', badge: 'Pro', badgeColor: 'purple' },
-  { name: 'Settings', icon: FiSettings, path: '/settings' },
-]
-
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [subscription, setSubscription] = useState<{ plan: string } | null>(null)
@@ -156,6 +147,16 @@ const SidebarContent = ({ onClose, subscription, ...rest }: SidebarProps) => {
   const pathname = usePathname()
   const router = useRouter()
   const isPro = subscription?.plan === 'pro'
+
+  const LinkItems: Array<LinkItemProps> = [
+    { name: 'Dashboard', icon: FiHome, path: '/dashboard' },
+    { name: 'Analytics', icon: FiTrendingUp, path: '/analytics-results', badge: 'New', badgeColor: 'green' },
+    { name: 'Channel', icon: GrChannel, path: '/channel' },
+    { name: 'Compare', icon: GrCommand, path: '/compare-videos' },
+    { name: 'Upgrade', icon: FiCompass, path: '/pricing', badge: isPro ? 'Pro' : 'Free', badgeColor: isPro ? 'purple' : 'gray' },
+    { name: 'Settings', icon: FiSettings, path: '/settings' },
+  ]
+
 
   return (
     <Box

@@ -1194,4 +1194,5 @@ def analyze_video():
         return jsonify({"error": "Internal server error", "status": "error", "details": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, threaded=True)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, threaded=True)

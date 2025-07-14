@@ -19,6 +19,7 @@ export default function SignIn() {
   const router = useRouter()
   const toast = useToast()
 
+
   useEffect(() => {
     if (session) {
       router.push('/dashboard')
@@ -48,6 +49,10 @@ export default function SignIn() {
         </VStack>
       </Container>
     )
+  }
+
+  if(session) {
+    router.push('/dashboard')
   }
 
   return (

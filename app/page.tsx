@@ -258,7 +258,7 @@ export default function Home() {
           <SimpleGrid columns={{ base: 1, md: 4 }} spacing={8}>
             <VStack align="start">
               <Heading size="md" mb={4}>
-                YT Analyzer
+                Rumbletrack
               </Heading>
               <Text color="gray.600">
                 Making YouTube analytics simple and insightful.
@@ -291,7 +291,7 @@ export default function Home() {
           </SimpleGrid>
           <Box mt={10} pt={10} borderTopWidth={1}>
             <Text textAlign="center" color="gray.600">
-              © 2024 YT Analyzer. All rights reserved.
+              © 2024 Rumbletrack. All rights reserved.
             </Text>
           </Box>
         </Container>

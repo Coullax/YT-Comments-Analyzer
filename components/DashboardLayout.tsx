@@ -212,7 +212,7 @@ const SidebarContent = ({ onClose, subscription, ...rest }: SidebarProps) => {
             boxShadow="0 4px 15px rgba(102, 126, 234, 0.3)"
           >
             <Text fontSize="xl" fontWeight="bold" color="white">
-              YT
+              RT
             </Text>
           </Box>
           <VStack align="start" spacing={0}>
@@ -223,7 +223,7 @@ const SidebarContent = ({ onClose, subscription, ...rest }: SidebarProps) => {
               bgClip="text"
               lineHeight={1}
             >
-              YT Analyzer
+              Rumbletrack
             </Text>
             <Text fontSize="xs" color="gray.500" lineHeight={1}>
               {isPro ? 'Pro Account' : 'Free Account'}
@@ -508,7 +508,7 @@ const MobileNav = ({ onOpen, subscription, ...rest }: MobileProps) => {
           bgGradient="linear(135deg, #667eea 0%, #764ba2 100%)"
           bgClip="text"
         >
-          YT Analyzer
+          Rumbletrack
         </Text>
         <Badge
           size="sm"

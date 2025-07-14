@@ -29,7 +29,7 @@ export default function Navbar() {
         <Flex align="center">
           <Link href="/" passHref>
             <Heading size="md" cursor="pointer">
-              YT Analyzer
+              Rumbletrack
             </Heading>
           </Link>
 

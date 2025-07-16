@@ -634,7 +634,7 @@
 import os
 from typing import List, Dict
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,Response
 from flask_cors import CORS
 import time
 import re
@@ -654,7 +654,10 @@ import numpy as np
 from wordcloud import WordCloud
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+import subprocess
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+import cv2
 load_dotenv()
 
 # Configure YouTube API
@@ -1046,6 +1049,331 @@ def create_default_section(section_name: str) -> Dict:
     if section_name == 'all':
         return all_defaults
     return all_defaults.get(section_name, {})
+
+def extract_frame_from_video(youtube_url: str, time: str) -> BytesIO:
+    """
+    Extract a single frame from a YouTube video at the specified time using OpenCV.
+    
+    Args:
+        youtube_url (str): The YouTube video URL.
+        time (str): Time in HH:MM:SS format or seconds (e.g., "00:01:30" or "90").
+    
+    Returns:
+        BytesIO: The extracted frame as a JPG image in a BytesIO buffer.
+    
+    Raises:
+        ValueError: If the URL or time is invalid, or if extraction fails.
+    """
+    try:
+        # Validate YouTube URL
+        if not youtube_url.startswith(('https://www.youtube.com', 'https://youtu.be')):
+            raise ValueError("Invalid YouTube URL")
+        
+        # Validate time format
+        if not re.match(r'^(\d{2}:\d{2}:\d{2}|\d+)$', time):
+            raise ValueError("Invalid time format. Use HH:MM:SS or seconds.")
+
+        # Convert time to seconds
+        if ":" in time:
+            h, m, s = map(int, time.split(":"))
+            seconds = h * 3600 + m * 60 + s
+        else:
+            seconds = int(time)
+
+        # Get direct video URL using yt-dlp
+        direct_url = subprocess.check_output(["yt-dlp", "-g", youtube_url]).decode().strip()
+
+        # Initialize OpenCV video capture
+        cap = cv2.VideoCapture(direct_url)
+        if not cap.isOpened():
+            raise ValueError("Failed to open video stream")
+
+        # Set frame position (in seconds)
+        cap.set(cv2.CAP_PROP_POS_MSEC, seconds * 1000)
+
+        # Read the frame
+        success, frame = cap.read()
+        if not success:
+            raise ValueError("Failed to extract frame at specified time")
+
+        # Convert frame to JPG
+        _, buffer = cv2.imencode(".jpg", frame)
+        cap.release()
+
+        return BytesIO(buffer.tobytes())
+
+    except subprocess.CalledProcessError as e:
+        raise ValueError(f"Failed to fetch video stream: {e.stderr.decode()}")
+    except Exception as e:
+        raise ValueError(f"Unexpected error during frame extraction: {str(e)}")
+    
+
+def get_video_transcript(video_id: str, start_time: str = None, end_time: str = None) -> str:
+    """
+    Fetch YouTube video transcript using YouTube Data API.
+    Optionally filter by time range.
+    """
+    try:
+        # Convert times to seconds
+        def time_to_seconds(time_str):
+            if not time_str:
+                return None
+            if ":" in time_str:
+                h, m, s = map(int, time_str.split(":"))
+                return h * 3600 + m * 60 + s
+            return int(time_str)
+
+        start_seconds = time_to_seconds(start_time)
+        end_seconds = time_to_seconds(end_time)
+
+        # Get available captions
+        captions_response = youtube.captions().list(
+            part="snippet",
+            videoId=video_id
+        ).execute()
+
+        captions = captions_response.get("items", [])
+        if not captions:
+            raise ValueError("No captions available for this video")
+
+        # Prefer auto-generated or English captions
+        caption_id = None
+        for caption in captions:
+            if caption["snippet"]["language"] == "en" or caption["snippet"]["trackKind"] == "asr":
+                caption_id = caption["id"]
+                break
+        if not caption_id:
+            raise ValueError("No English or auto-generated captions found")
+
+        # Download captions
+        caption_response = youtube.captions().download(id=caption_id).execute()
+
+        # Parse captions (assuming SRT format)
+        transcript = []
+        lines = caption_response.decode().split("\n\n")
+        for line in lines:
+            if not line.strip():
+                continue
+            parts = line.split("\n")
+            if len(parts) < 3:
+                continue
+            timing = parts[1].split(" --> ")
+            start = timing[0].replace(",", ".")
+            start_secs = sum(float(x) * 60 ** i for i, x in enumerate(reversed(start.split(":"))))
+            if start_seconds is not None and start_secs < start_seconds:
+                continue
+            if end_seconds is not None and start_secs > end_seconds:
+                break
+            transcript.append(" ".join(parts[2:]))
+
+        return "\n".join(transcript) if transcript else "No transcript content found"
+
+    except HttpError as e:
+        raise ValueError(f"Failed to fetch transcript: {str(e)}")
+    except Exception as e:
+        raise ValueError(f"Unexpected error fetching transcript: {str(e)}")
+    
+
+def summarize_and_analyze_transcript(transcript: str, youtube_url: str) -> dict:
+    """
+    Use Gemini API to summarize and analyze the transcript.
+    """
+    try:
+        prompt = (
+            f"Below is the transcript of a YouTube video ({youtube_url}). "
+            "Provide a detailed summary of the content, key points, and themes. "
+            "Also, provide an analysis discussing the main themes, sentiment, and notable insights. "
+            "Return the response in JSON format with the following structure:\n"
+            "{\n"
+            "  \"summary\": \"string\",\n"
+            "  \"analysis\": \"string\"\n"
+            "}\n\n"
+            f"Transcript:\n{transcript}"
+        )
+
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+
+        # Parse JSON response
+        if response_text.startswith("```json"):
+            response_text = response_text[7:-3]
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError:
+            return {
+                "summary": response_text,
+                "analysis": "Analysis could not be parsed due to invalid JSON format"
+            }
+
+    except Exception as e:
+        raise ValueError(f"Failed to summarize transcript: {str(e)}")
+
+def summarize_video(youtube_url: str, start_time: str = None, end_time: str = None) -> dict:
+    """
+    Generate a summary, transcript, and analysis of a YouTube video using Gemini API.
+    
+    Args:
+        youtube_url (str): The YouTube video URL.
+        start_time (str, optional): Start time in HH:MM:SS or seconds.
+        end_time (str, optional): End time in HH:MM:SS or seconds.
+    
+    Returns:
+        dict: Contains summary, transcript, and analysis.
+    """
+    try:
+        if not youtube_url.startswith(('https://www.youtube.com', 'https://youtu.be')):
+            raise ValueError("Invalid YouTube URL")
+
+        # Validate time formats if provided
+        if start_time and not re.match(r'^(\d{2}:\d{2}:\d{2}|\d+)$', start_time):
+            raise ValueError("Invalid start time format. Use HH:MM:SS or seconds.")
+        if end_time and not re.match(r'^(\d{2}:\d{2}:\d{2}|\d+)$', end_time):
+            raise ValueError("Invalid end time format. Use HH:MM:SS or seconds.")
+
+        # Convert times to seconds if provided
+        def time_to_seconds(time_str):
+            if not time_str:
+                return None
+            if ":" in time_str:
+                h, m, s = map(int, time_str.split(":"))
+                return h * 3600 + m * 60 + s
+            return int(time_str)
+
+        start_seconds = time_to_seconds(start_time)
+        end_seconds = time_to_seconds(end_time)
+
+        # Initialize Gemini model
+
+        # Build prompt
+        prompt = (
+            "Provide a detailed summary of the YouTube video, including key points and themes. "
+            "Also, generate a transcript of the spoken content. "
+            "Finally, provide an analysis of the video, discussing its main themes, sentiment, and any notable insights. "
+        )
+        if start_seconds is not None and end_seconds is not None:
+            prompt += f"Focus on the segment from {start_time} to {end_time}."
+
+        # Configure video metadata for clipping if specified
+        video_metadata = {}
+        if start_seconds is not None and end_seconds is not None:
+            video_metadata = {
+                "videoMetadata": {
+                    "startOffset": {"seconds": start_seconds},
+                    "endOffset": {"seconds": end_seconds}
+                }
+            }
+
+        # Make API call
+        response = model.generate_content([
+            {"file_data": {"file_uri": youtube_url, "mime_type": "video/mp4"}},
+            {"text": prompt}
+        ], request_options=video_metadata if video_metadata else None)
+
+        # Extract response text
+        response_text = response.text
+
+        # Parse response (assuming Gemini returns structured text; adjust based on actual response format)
+        # This is a simplified parsing; you may need to adjust based on Gemini's output
+        sections = response_text.split("\n\n")
+        summary = sections[0] if len(sections) > 0 else "No summary provided."
+        transcript = sections[1] if len(sections) > 1 else "No transcript provided."
+        analysis = sections[2] if len(sections) > 2 else "No analysis provided."
+
+        return {
+            "summary": summary,
+            "transcript": transcript,
+            "analysis": analysis
+        }
+
+    except Exception as e:
+        raise ValueError(f"Failed to summarize video: {str(e)}")
+
+@app.route("/api/extract-frame", methods=["POST"])
+def extract_frame():
+    """
+    API endpoint to extract a frame from a YouTube video.
+    Expects JSON with 'youtube_url', 'time', and 'extraction_id' fields.
+    Returns the extracted frame as a JPG image.
+    """
+    try:
+        data = request.get_json()
+        if not data or "youtube_url" not in data or "time" not in data:
+            return jsonify({"error": "Missing required parameters 'youtube_url' or 'time'"}), 400
+        
+        youtube_url = data["youtube_url"]
+        time = data["time"]
+        # extraction_id is not used in this example but can be logged or stored
+
+        # Extract frame
+        image_buffer = extract_frame_from_video(youtube_url, time)
+
+        # Return image as streaming response
+        return Response(
+            image_buffer.getvalue(),
+            mimetype="image/jpeg",
+            headers={"Content-Disposition": "inline; filename=frame.jpg"}
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+    
+# @app.route("/api/summarize-video", methods=["POST"])
+# def summarize_video_endpoint():
+#     """
+#     API endpoint to summarize a YouTube video, including transcript and analysis.
+#     Expects JSON with 'youtube_url', optional 'start_time', 'end_time', and 'extraction_id'.
+#     """
+#     try:
+#         data = request.get_json()
+#         if not data or "youtube_url" not in data:
+#             return jsonify({"error": "Missing required parameter 'youtube_url'"}), 400
+        
+#         youtube_url = data["youtube_url"]
+#         start_time = data.get("start_time")
+#         end_time = data.get("end_time")
+
+#         # extraction_id is included but not used here; can be logged or stored
+
+#         result = summarize_video(youtube_url, start_time, end_time)
+#         return jsonify(result)
+#     except ValueError as e:
+#         return jsonify({"error": str(e)}), 400
+#     except Exception as e:
+#         print(traceback.format_exc())
+#         return jsonify({"error": "Internal server error", "details": str(e)}), 500
+
+@app.route("/api/summarize-video", methods=["POST"])
+def summarize_video():
+    """
+    API endpoint to fetch YouTube video transcript and generate summary and analysis.
+    Expects JSON with 'youtube_url', optional 'start_time', 'end_time', and 'extraction_id'.
+    """
+    try:
+        data = request.get_json()
+        if not data or "youtube_url" not in data:
+            return jsonify({"error": "Missing required parameter 'youtube_url'"}), 400
+        
+        youtube_url = data["youtube_url"]
+        start_time = data.get("start_time")
+        end_time = data.get("end_time")
+
+        video_id = extract_video_id(youtube_url)
+        transcript = get_video_transcript(video_id, start_time, end_time)
+        if not transcript:
+            return jsonify({"error": "No transcript available for this video"}), 404
+
+        result = summarize_and_analyze_transcript(transcript, youtube_url)
+        result["transcript"] = transcript  # Include transcript in response
+
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+    
 
 @app.route("/api/chat", methods=["POST"])
 def chat():

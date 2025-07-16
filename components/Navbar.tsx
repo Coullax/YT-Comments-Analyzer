@@ -75,7 +75,7 @@ export default function Navbar() {
       left="0" 
       right="0" 
       zIndex="1000"
-      bg="rgba(255, 255, 255, 0.9)"
+      bg="transparent"
       backdropFilter="blur(20px)"
       borderBottom="1px solid"
       borderColor="whiteAlpha.200"
@@ -105,7 +105,7 @@ export default function Navbar() {
           <Spacer />
           
           {/* Desktop Navigation */}
-          <HStack spacing={8} display={{ base: 'none', md: 'flex' }}>
+          {/* <HStack spacing={8} display={{ base: 'none', md: 'flex' }}>
             <ChakraLink 
               href="#features" 
               fontSize="sm" 
@@ -136,7 +136,7 @@ export default function Navbar() {
             >
               About
             </ChakraLink>
-          </HStack>
+          </HStack> */}
           
           <Spacer />
           

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Box,
   Button,
@@ -22,6 +22,8 @@ import {
   Avatar,
   Divider,
   Link,
+  AvatarGroup,
+  Progress,
 } from '@chakra-ui/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -44,15 +46,28 @@ import {
   FaLinkedin,
   FaInstagram,
   FaDiscord,
+  
+  FaChartLine,
+  FaThumbsUp,
+  FaComment,
+  FaEye,
+  FaBolt,
+  FaCrown,
+  FaFire,
+  FaTrophy,
+  FaLightbulb,
+  FaCloud,
+  FaInfinity
 } from 'react-icons/fa'
 import PricingCard from '@/components/PricingCard'
 import Navbar from '@/components/Navbar'
 
-
 export default function Home() {
-    const router = useRouter()
+  const router = useRouter()
   const bgColor = useColorModeValue('gray.50', 'gray.900')
   const cardBg = useColorModeValue('white', 'gray.800')
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [animatedStats, setAnimatedStats] = useState({ comments: 0, accuracy: 0, users: 0 });
 
   const features = [
     {
@@ -60,6 +75,7 @@ export default function Home() {
       title: 'Advanced Analytics',
       description: 'Get detailed insights into your YouTube comments with powerful analytics tools.',
       gradient: 'linear(to-br, blue.400, purple.600)',
+      
     },
     {
       icon: FaComments,
@@ -106,65 +122,186 @@ export default function Home() {
     { number: '24/7', label: 'Uptime', icon: FaRocket },
   ]
 
+
+
+  const testimonialsHero = [
+    {
+      name: "Sarah Johnson",
+      role: "Content Creator",
+      avatar: "https://images.unsplash.com/photo-1494790108755-2616b9e00db8?w=100&h=100&fit=crop&crop=face",
+      text: "This tool completely transformed how I understand my audience. The insights are incredible!",
+      rating: 5
+    },
+    {
+      name: "Mike Chen",
+      role: "YouTuber",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
+      text: "I've tried many analytics tools, but this AI-powered sentiment analysis is game-changing.",
+      rating: 5
+    },
+    {
+      name: "Emma Davis",
+      role: "Digital Marketer",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
+      text: "The real-time monitoring helped me identify trending topics before my competitors.",
+      rating: 5
+    }
+  ];
+
+  const featuresHero = [
+    { icon: FaBolt, text: "Real-time Analysis", color: "yellow.400" },
+    { icon: FaShieldAlt, text: "Privacy Protected", color: "green.400" },
+    { icon: FaRocket, text: "Lightning Fast", color: "blue.400" },
+    { icon: FaInfinity, text: "Unlimited Insights", color: "purple.400" }
+  ];
+
+  const partners = [
+    { name: "YouTube", logo: FaYoutube, color: "red.500" },
+    { name: "Google", logo: FaGlobe, color: "blue.500" },
+    { name: "Analytics", logo: FaChartLine, color: "green.500" },
+    { name: "AI Cloud", logo: FaCloud, color: "purple.500" }
+  ];
+
+  useEffect(() => {
+    const testimonialInterval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 4000);
+
+    // Animate stats on mount
+    const statsInterval = setInterval(() => {
+      setAnimatedStats(prev => ({
+        comments: Math.min(prev.comments + 100000, 10000000),
+        accuracy: Math.min(prev.accuracy + 1, 95),
+        users: Math.min(prev.users + 500, 50000)
+      }));
+    }, 50);
+
+    setTimeout(() => clearInterval(statsInterval), 3000);
+
+    return () => {
+      clearInterval(testimonialInterval);
+      clearInterval(statsInterval);
+    };
+  }, []);
+
   return (
     <Box>
       <Navbar />
       
       {/* Modern Hero Section - UNCHANGED */}
-      <Box 
-        position="relative" 
-        minH="100vh" 
-        overflow="hidden"
-        bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        pt={20}
-      >
-        {/* Animated Background Elements */}
-        <Box
-          position="absolute"
-          top="10%"
-          left="10%"
-          w="200px"
-          h="200px"
-          bg="whiteAlpha.100"
-          borderRadius="full"
-          animation="float 6s ease-in-out infinite"
-          sx={{
-            '@keyframes float': {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-20px)' },
-            }
-          }}
-        />
-        <Box
-          position="absolute"
-          top="60%"
-          right="15%"
-          w="150px"
-          h="150px"
-          bg="whiteAlpha.80"
-          borderRadius="20px"
-          animation="float 8s ease-in-out infinite reverse"
-          sx={{
-            '@keyframes float': {
-              '0%, 100%': { transform: 'translateY(0px)' },
-              '50%': { transform: 'translateY(-20px)' },
-            }
-          }}
-        />
-        
-        {/* Gradient Overlay */}
-        <Box
-          position="absolute"
-          inset="0"
-          bg="linear-gradient(45deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9))"
-          backdropFilter="blur(10px)"
-        />
-        
-        <Container maxW="container.xl" py={20} position="relative" zIndex={1}>
-          <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={16} alignItems="center">
-            <Box color="white">
-              {/* Social Proof Badge */}
-              <HStack mb={6} spacing={4}>
+    <Box 
+      position="relative" 
+      minH="100vh" 
+      overflow="hidden"
+      bg="black"
+      pt={20}
+    >
+      {/* Enhanced Animated Background Elements */}
+      <Box
+        position="absolute"
+        top="5%"
+        left="5%"
+        w="300px"
+        h="300px"
+        bg="black"
+        borderRadius="full"
+        sx={{
+          '@keyframes float': {
+            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+            '50%': { transform: 'translateY(-20px) rotate(5deg)' },
+          },
+          animation: 'float 8s ease-in-out infinite',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '150px',
+            height: '150px',
+            bg: 'black',
+            borderRadius: 'full',
+            '@keyframes pulse': {
+              '0%, 100%': { transform: 'scale(1)', opacity: 0.7 },
+              '50%': { transform: 'scale(1.1)', opacity: 1 },
+            },
+            animation: 'pulse 3s ease-in-out infinite'
+          }
+        }}
+      />
+      
+      <Box
+        position="absolute"
+        top="15%"
+        right="8%"
+        w="200px"
+        h="200px"
+        bg="black"
+        borderRadius="3xl"
+        transform="rotate(45deg)"
+        sx={{
+          '@keyframes floatReverse': {
+            '0%, 100%': { transform: 'rotate(45deg) translateY(0px)' },
+            '50%': { transform: 'rotate(45deg) translateY(-20px)' },
+          },
+          animation: 'floatReverse 6s ease-in-out infinite'
+        }}
+      />
+      
+      <Box
+        position="absolute"
+        bottom="10%"
+        left="20%"
+        w="150px"
+        h="150px"
+        bg="whiteAlpha.120"
+        borderRadius="2xl"
+        sx={{
+          '@keyframes floatSlow': {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-15px)' },
+          },
+          animation: 'floatSlow 10s ease-in-out infinite'
+        }}
+      />
+      
+      <Box
+        position="absolute"
+        top="40%"
+        right="25%"
+        w="100px"
+        h="100px"
+        bg="whiteAlpha.100"
+        borderRadius="full"
+        sx={{
+          '@keyframes pulseSlow': {
+            '0%, 100%': { transform: 'scale(1)', opacity: 0.7 },
+            '50%': { transform: 'scale(1.2)', opacity: 1 },
+          },
+          animation: 'pulseSlow 4s ease-in-out infinite'
+        }}
+      />
+
+      {/* Multiple Gradient Overlays for Depth */}
+      <Box
+        position="absolute"
+        inset="0"
+        bg="black"
+        backdropFilter="blur(10px)"
+      />
+      
+      <Box
+        position="absolute"
+        inset="0"
+        bg="radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)"
+      />
+      
+      <Container maxW="container.xl" py={20} position="relative" zIndex={1}>
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={16} alignItems="center">
+          <Box color="white">
+            {/* Enhanced Social Proof Section */}
+            <VStack spacing={4} mb={8} align="start">
+              <HStack spacing={4} flexWrap="wrap">
                 <Badge 
                   colorScheme="whiteAlpha" 
                   variant="solid" 
@@ -173,6 +310,8 @@ export default function Home() {
                   borderRadius="full"
                   bg="whiteAlpha.200"
                   backdropFilter="blur(10px)"
+                  border="1px solid"
+                  borderColor="whiteAlpha.300"
                 >
                   <HStack spacing={2}>
                     <Icon as={FaStar} color="yellow.300" />
@@ -188,220 +327,547 @@ export default function Home() {
                   bg="green.400"
                 >
                   <HStack spacing={1}>
-                    <Icon as={FaTrademark} boxSize={3} />
-                    <Text fontSize="xs">Growing Fast</Text>
+                    <Icon as={FaFire} boxSize={3} />
+                    <Text fontSize="xs">Trending #1</Text>
+                  </HStack>
+                </Badge>
+                <Badge 
+                  colorScheme="purple" 
+                  variant="solid" 
+                  px={3} 
+                  py={1} 
+                  borderRadius="full"
+                  bg="purple.400"
+                >
+                  <HStack spacing={1}>
+                    <Icon as={FaTrophy} boxSize={3} />
+                    <Text fontSize="xs">Award Winner</Text>
                   </HStack>
                 </Badge>
               </HStack>
               
-              <Heading
-                as="h1"
-                size="3xl"
-                mb={8}
-                fontWeight="800"
-                lineHeight="1.1"
-                bgGradient="linear(to-r, white, gray.200)"
-                bgClip="text"
-                textShadow="0 0 30px rgba(255,255,255,0.5)"
-              >
-                Transform Your YouTube
-                <Text as="span" display="block" color="yellow.300">
-                  Comments Into Gold
-                </Text>
-              </Heading>
-              
-              <Text 
-                fontSize="xl" 
-                mb={8} 
-                color="whiteAlpha.900"
-                fontWeight="400"
-                lineHeight="1.6"
-                maxW="500px"
-              >
-                Unlock the power of AI-driven sentiment analysis and discover what your audience really thinks. Turn every comment into actionable insights.
-              </Text>
-              
-              {/* Stats Row */}
-              <HStack spacing={8} mb={8}>
+              {/* User Avatars */}
+              <HStack spacing={4}>
+                <AvatarGroup size="md" max={4}>
+                  <Avatar src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&crop=face" />
+                  <Avatar src="https://images.unsplash.com/photo-1494790108755-2616b9e00db8?w=100&h=100&fit=crop&crop=face" />
+                  <Avatar src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" />
+                  <Avatar src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" />
+                  <Avatar src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" />
+                </AvatarGroup>
                 <VStack spacing={0} align="start">
-                  <Text fontSize="2xl" fontWeight="bold" color="yellow.300">10M+</Text>
-                  <Text fontSize="sm" color="whiteAlpha.700">Comments Analyzed</Text>
-                </VStack>
-                <VStack spacing={0} align="start">
-                  <Text fontSize="2xl" fontWeight="bold" color="yellow.300">95%</Text>
-                  <Text fontSize="sm" color="whiteAlpha.700">Accuracy Rate</Text>
-                </VStack>
-                <VStack spacing={0} align="start">
-                  <Text fontSize="2xl" fontWeight="bold" color="yellow.300">24/7</Text>
-                  <Text fontSize="sm" color="whiteAlpha.700">Real-time Monitoring</Text>
+                  <Text fontSize="sm" fontWeight="bold">Join thousands of creators</Text>
+                  <HStack spacing={1}>
+                    {[...Array(5)].map((_, i) => (
+                      <Icon key={i} as={FaStar} color="yellow.300" boxSize={3} />
+                    ))}
+                    <Text fontSize="xs" color="whiteAlpha.800">4.9/5 rating</Text>
+                  </HStack>
                 </VStack>
               </HStack>
-              
-              <Stack direction={{ base: 'column', sm: 'row' }} spacing={4}>
-                <Button
-                  size="lg"
-                  bg="white"
-                  color="purple.600"
-                  rightIcon={<FaArrowRight />}
-                  onClick={() => router.push('/signin')}
-                  borderRadius="full"
-                  px={8}
-                  py={6}
-                  fontSize="lg"
-                  fontWeight="bold"
-                  boxShadow="0 10px 30px rgba(255,255,255,0.3)"
-                  _hover={{
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 15px 40px rgba(255,255,255,0.4)',
-                    bg: 'gray.50'
-                  }}
-                  transition="all 0.3s ease"
-                >
-                  Start Free Analysis
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  leftIcon={<FaPlay />}
-                  onClick={() => window.open('https://www.youtube.com', '_blank')}
-                  borderColor="whiteAlpha.500"
-                  color="white"
-                  borderRadius="full"
-                  px={8}
-                  py={6}
-                  fontSize="lg"
-                  backdropFilter="blur(10px)"
-                  bg="whiteAlpha.200"
-                  _hover={{
-                    bg: 'whiteAlpha.300',
-                    borderColor: 'whiteAlpha.700',
-                    transform: 'translateY(-2px)'
-                  }}
-                  transition="all 0.3s ease"
-                >
-                  Watch Demo
-                </Button>
-              </Stack>
-            </Box>
+            </VStack>
             
-            {/* Modern Dashboard Preview */}
-            <Box position="relative">
-              <Box
-                bg="whiteAlpha.100"
-                borderRadius="3xl"
-                p={1}
-                backdropFilter="blur(20px)"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                boxShadow="0 25px 50px rgba(0,0,0,0.2)"
-                transform="rotate(-2deg)"
-                _hover={{ transform: 'rotate(0deg)' }}
-                transition="all 0.5s ease"
-              >
-                <Box
-                  bg="white"
-                  borderRadius="2xl"
-                  p={6}
-                  minH="400px"
-                  position="relative"
-                  overflow="hidden"
+            <Heading
+              as="h1"
+              size="4xl"
+              mb={6}
+              fontWeight="900"
+              lineHeight="1.1"
+              bgGradient="linear(to-r, white, gray.200)"
+              bgClip="text"
+              textShadow="0 0 30px rgba(255,255,255,0.5)"
+              sx={{
+                '@keyframes slideIn': {
+                  from: { transform: 'translateX(-100px)', opacity: 0 },
+                  to: { transform: 'translateX(0)', opacity: 1 },
+                },
+                animation: 'slideIn 1s ease-out'
+              }}
+            >
+              Transform Your YouTube
+              <Text as="span" display="block" color="yellow.300">
+                Comments Into Gold
+              </Text>
+              <Text as="span" display="block" fontSize="2xl" color="whiteAlpha.800" fontWeight="400">
+                with AI-Powered Insights
+              </Text>
+            </Heading>
+            
+            <Text 
+              fontSize="xl" 
+              mb={6} 
+              color="whiteAlpha.900"
+              fontWeight="400"
+              lineHeight="1.7"
+              maxW="600px"
+            >
+              Unlock the power of AI-driven sentiment analysis and discover what your audience really thinks. 
+              Turn every comment into actionable insights that drive growth, engagement, and revenue.
+            </Text>
+            
+            {/* Feature Pills */}
+            <HStack spacing={3} mb={8} flexWrap="wrap">
+              {featuresHero.map((feature, index) => (
+                <HStack 
+                  key={index}
+                  spacing={2} 
+                  px={4} 
+                  py={2} 
+                  bg="whiteAlpha.200" 
+                  borderRadius="full"
+                  backdropFilter="blur(10px)"
+                  border="1px solid"
+                  borderColor="whiteAlpha.300"
                 >
-                  {/* Dashboard Header */}
-                  <HStack justify="space-between" mb={6}>
-                    <HStack>
-                      <Box w={3} h={3} bg="red.400" borderRadius="full" />
-                      <Box w={3} h={3} bg="yellow.400" borderRadius="full" />
-                      <Box w={3} h={3} bg="green.400" borderRadius="full" />
-                    </HStack>
+                  <Icon as={feature.icon} color={feature.color} boxSize={4} />
+                  <Text fontSize="sm" fontWeight="medium">{feature.text}</Text>
+                </HStack>
+              ))}
+            </HStack>
+            
+            {/* Animated Stats Row */}
+            <SimpleGrid columns={3} spacing={8} mb={8}>
+              <VStack spacing={1} align="start">
+                <Text fontSize="3xl" fontWeight="bold" color="yellow.300">
+                  {(animatedStats.comments / 1000000).toFixed(1)}M+
+                </Text>
+                <Text fontSize="sm" color="whiteAlpha.700">Comments Analyzed</Text>
+                <Progress value={100} colorScheme="yellow" size="sm" w="80px" borderRadius="full" />
+              </VStack>
+              <VStack spacing={1} align="start">
+                <Text fontSize="3xl" fontWeight="bold" color="green.300">
+                  {animatedStats.accuracy}%
+                </Text>
+                <Text fontSize="sm" color="whiteAlpha.700">Accuracy Rate</Text>
+                <Progress value={animatedStats.accuracy} colorScheme="green" size="sm" w="80px" borderRadius="full" />
+              </VStack>
+              <VStack spacing={1} align="start">
+                <Text fontSize="3xl" fontWeight="bold" color="blue.300">
+                  {(animatedStats.users / 1000).toFixed(0)}K+
+                </Text>
+                <Text fontSize="sm" color="whiteAlpha.700">Active Users</Text>
+                <Progress value={100} colorScheme="blue" size="sm" w="80px" borderRadius="full" />
+              </VStack>
+            </SimpleGrid>
+            
+            {/* Call to Action Buttons */}
+            <Stack direction={{ base: 'column', sm: 'row' }} spacing={4} mb={8}>
+              <Button
+                size="lg"
+                bg="white"
+                color="purple.600"
+                rightIcon={<FaArrowRight />}
+                onClick={() => router.push('/signin')}
+                borderRadius="full"
+                px={8}
+                py={6}
+                fontSize="lg"
+                fontWeight="bold"
+                boxShadow="0 10px 30px rgba(255,255,255,0.3)"
+                _hover={{
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 15px 40px rgba(255,255,255,0.4)',
+                  bg: 'gray.50'
+                }}
+                transition="all 0.3s ease"
+              >
+                Start Free Analysis
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                leftIcon={<FaPlay />}
+                borderColor="whiteAlpha.500"
+                color="white"
+                borderRadius="full"
+                px={8}
+                py={6}
+                fontSize="lg"
+                backdropFilter="blur(10px)"
+                bg="whiteAlpha.200"
+                _hover={{
+                  bg: 'whiteAlpha.300',
+                  borderColor: 'whiteAlpha.700',
+                  transform: 'translateY(-2px)'
+                }}
+                transition="all 0.3s ease"
+              >
+                Watch Demo
+              </Button>
+            </Stack>
+            
+            {/* Partner Logos */}
+            <VStack spacing={3} align="start">
+              <Text fontSize="sm" color="whiteAlpha.700">Trusted by industry leaders:</Text>
+              <HStack spacing={6}>
+                {partners.map((partner, index) => (
+                  <HStack key={index} spacing={2} opacity={0.8}>
+                    <Icon as={partner.logo} color={partner.color} boxSize={5} />
+                    <Text fontSize="sm" fontWeight="medium">{partner.name}</Text>
+                  </HStack>
+                ))}
+              </HStack>
+            </VStack>
+          </Box>
+          
+          {/* Enhanced Dashboard Preview */}
+          <Box position="relative">
+            {/* Main Dashboard */}
+            <Box
+              bg="whiteAlpha.100"
+              borderRadius="3xl"
+              p={1}
+              backdropFilter="blur(20px)"
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              boxShadow="0 25px 50px rgba(0,0,0,0.2)"
+              transform="rotate(-2deg)"
+              _hover={{ transform: 'rotate(0deg)' }}
+              transition="all 0.5s ease"
+            >
+              <Box
+                bg="white"
+                borderRadius="2xl"
+                p={6}
+                minH="500px"
+                position="relative"
+                overflow="hidden"
+              >
+                {/* Dashboard Header */}
+                <HStack justify="space-between" mb={6}>
+                  <HStack>
+                    <Box w={3} h={3} bg="red.400" borderRadius="full" />
+                    <Box w={3} h={3} bg="yellow.400" borderRadius="full" />
+                    <Box w={3} h={3} bg="green.400" borderRadius="full" />
+                  </HStack>
+                  <HStack spacing={2}>
                     <Badge colorScheme="green" variant="solid" borderRadius="full">
-                      Live Data
+                      <HStack spacing={1}>
+                        <Box w={2} h={2} bg="green.300" borderRadius="full" />
+                        <Text fontSize="xs">Live</Text>
+                      </HStack>
+                    </Badge>
+                    <Badge colorScheme="blue" variant="outline" borderRadius="full">
+                      <HStack spacing={1}>
+                        <Icon as={FaEye} boxSize={3} />
+                        <Text fontSize="xs">Real-time</Text>
+                      </HStack>
                     </Badge>
                   </HStack>
-                  
-                  {/* Mock Dashboard Content */}
-                  <VStack spacing={4} align="stretch">
-                    <Box>
-                      <Text fontSize="lg" fontWeight="bold" color="gray.800" mb={2}>
+                </HStack>
+                
+                {/* Enhanced Dashboard Content */}
+                <VStack spacing={6} align="stretch">
+                  {/* Sentiment Analysis */}
+                  <Box>
+                    <HStack justify="space-between" mb={3}>
+                      <Text fontSize="lg" fontWeight="bold" color="gray.800">
                         Sentiment Analysis
                       </Text>
-                      <HStack spacing={2}>
-                        <Box flex={1} h={4} bg="green.200" borderRadius="full" />
-                        <Box flex={1} h={4} bg="yellow.200" borderRadius="full" />
-                        <Box flex={0.5} h={4} bg="red.200" borderRadius="full" />
+                      <Badge colorScheme="purple" variant="subtle">
+                        <HStack spacing={1}>
+                          <Icon as={FaLightbulb} boxSize={3} />
+                          <Text fontSize="xs">AI Powered</Text>
+                        </HStack>
+                      </Badge>
+                    </HStack>
+                    <VStack spacing={2} align="stretch">
+                      <HStack>
+                        <Box flex={3} h={6} bg="green.200" borderRadius="full" position="relative">
+                          <Box 
+                            position="absolute" 
+                            right={2} 
+                            top="50%" 
+                            transform="translateY(-50%)"
+                            fontSize="xs" 
+                            fontWeight="bold" 
+                            color="green.800"
+                          >
+                            72%
+                          </Box>
+                        </Box>
+                        <Text fontSize="sm" color="gray.600" w="20">Positive</Text>
                       </HStack>
-                    </Box>
-                    
-                    <SimpleGrid columns={2} spacing={4}>
-                      <Box p={4} bg="blue.50" borderRadius="xl">
-                        <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                          87%
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">Positive</Text>
-                      </Box>
-                      <Box p={4} bg="purple.50" borderRadius="xl">
-                        <Text fontSize="2xl" fontWeight="bold" color="purple.600">
-                          1.2K
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">Comments</Text>
-                      </Box>
-                    </SimpleGrid>
-                    
-                    <Box>
-                      <Text fontSize="sm" color="gray.600" mb={2}>Top Keywords</Text>
-                      <HStack spacing={2} flexWrap="wrap">
-                        {['amazing', 'love it', 'helpful', 'great'].map((keyword) => (
-                          <Badge key={keyword} colorScheme="blue" variant="subtle">
-                            {keyword}
-                          </Badge>
-                        ))}
+                      <HStack>
+                        <Box flex={1} h={6} bg="yellow.200" borderRadius="full" position="relative">
+                          <Box 
+                            position="absolute" 
+                            right={2} 
+                            top="50%" 
+                            transform="translateY(-50%)"
+                            fontSize="xs" 
+                            fontWeight="bold" 
+                            color="yellow.800"
+                          >
+                            20%
+                          </Box>
+                        </Box>
+                        <Text fontSize="sm" color="gray.600" w="20">Neutral</Text>
                       </HStack>
-                    </Box>
-                  </VStack>
+                      <HStack>
+                        <Box flex={0.3} h={6} bg="red.200" borderRadius="full" position="relative">
+                          <Box 
+                            position="absolute" 
+                            right={2} 
+                            top="50%" 
+                            transform="translateY(-50%)"
+                            fontSize="xs" 
+                            fontWeight="bold" 
+                            color="red.800"
+                          >
+                            8%
+                          </Box>
+                        </Box>
+                        <Text fontSize="sm" color="gray.600" w="20">Negative</Text>
+                      </HStack>
+                    </VStack>
+                  </Box>
                   
-                  {/* Floating Elements */}
-                  <Box
-                    position="absolute"
-                    top={4}
-                    right={4}
-                    w={8}
-                    h={8}
-                    bg="purple.400"
-                    borderRadius="full"
-                    opacity={0.3}
-                    animation="pulse 2s infinite"
-                  />
-                </Box>
+                  {/* Enhanced Stats Grid */}
+                  <SimpleGrid columns={2} spacing={4}>
+                    <Box p={4} bg="gradient-to-br from-blue.50 to-blue.100" borderRadius="xl" border="1px solid" borderColor="blue.200">
+                      <HStack justify="space-between" mb={2}>
+                        <Icon as={FaThumbsUp} color="blue.600" boxSize={5} />
+                        <Badge colorScheme="blue" variant="subtle" fontSize="2xs">+12%</Badge>
+                      </HStack>
+                      <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+                        87%
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">Positive Rate</Text>
+                    </Box>
+                    <Box p={4} bg="gradient-to-br from-purple.50 to-purple.100" borderRadius="xl" border="1px solid" borderColor="purple.200">
+                      <HStack justify="space-between" mb={2}>
+                        <Icon as={FaComment} color="purple.600" boxSize={5} />
+                        <Badge colorScheme="purple" variant="subtle" fontSize="2xs">+5.2K</Badge>
+                      </HStack>
+                      <Text fontSize="2xl" fontWeight="bold" color="purple.600">
+                        1.2K
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">Comments</Text>
+                    </Box>
+                    <Box p={4} bg="gradient-to-br from-green.50 to-green.100" borderRadius="xl" border="1px solid" borderColor="green.200">
+                      <HStack justify="space-between" mb={2}>
+                        <Icon as={FaHeart} color="green.600" boxSize={5} />
+                        <Badge colorScheme="green" variant="subtle" fontSize="2xs">+8%</Badge>
+                      </HStack>
+                      <Text fontSize="2xl" fontWeight="bold" color="green.600">
+                        94%
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">Engagement</Text>
+                    </Box>
+                    <Box p={4} bg="gradient-to-br from-orange.50 to-orange.100" borderRadius="xl" border="1px solid" borderColor="orange.200">
+                      <HStack justify="space-between" mb={2}>
+                        <Icon as={FaRocket} color="orange.600" boxSize={5} />
+                        <Badge colorScheme="orange" variant="subtle" fontSize="2xs">+15%</Badge>
+                      </HStack>
+                      <Text fontSize="2xl" fontWeight="bold" color="orange.600">
+                        2.1M
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">Reach</Text>
+                    </Box>
+                  </SimpleGrid>
+                  
+                  {/* Top Keywords with Enhanced Design */}
+                  <Box>
+                    <HStack justify="space-between" mb={3}>
+                      <Text fontSize="sm" color="gray.600">Trending Keywords</Text>
+                      <Badge colorScheme="green" variant="subtle" fontSize="2xs">
+                        <HStack spacing={1}>
+                          <Icon as={FaFire} boxSize={2} />
+                          <Text>Hot</Text>
+                        </HStack>
+                      </Badge>
+                    </HStack>
+                    <Flex flexWrap="wrap" gap={2}>
+                      {[
+                        { word: 'amazing', intensity: 'high' },
+                        { word: 'love it', intensity: 'high' },
+                        { word: 'helpful', intensity: 'medium' },
+                        { word: 'great content', intensity: 'high' },
+                        { word: 'awesome', intensity: 'medium' },
+                        { word: 'inspiring', intensity: 'low' }
+                      ].map((keyword, index) => (
+                        <Badge 
+                          key={index} 
+                          colorScheme={keyword.intensity === 'high' ? 'blue' : keyword.intensity === 'medium' ? 'purple' : 'gray'} 
+                          variant="subtle"
+                          px={3}
+                          py={1}
+                          borderRadius="full"
+                          fontSize="xs"
+                        >
+                          {keyword.word}
+                        </Badge>
+                      ))}
+                    </Flex>
+                  </Box>
+                </VStack>
+                
+                {/* Enhanced Floating Elements */}
+                <Box
+                  position="absolute"
+                  top={4}
+                  right={4}
+                  w={10}
+                  h={10}
+                  bg="purple.400"
+                  borderRadius="full"
+                  opacity={0.6}
+                  sx={{
+                    '@keyframes pulseGlow': {
+                      '0%, 100%': { transform: 'scale(1)', opacity: 0.6 },
+                      '50%': { transform: 'scale(1.2)', opacity: 1 },
+                    },
+                    animation: 'pulseGlow 3s infinite'
+                  }}
+                />
+                <Box
+                  position="absolute"
+                  bottom={4}
+                  left={4}
+                  w={6}
+                  h={6}
+                  bg="blue.400"
+                  borderRadius="full"
+                  opacity={0.4}
+                  sx={{
+                    '@keyframes pulseFast': {
+                      '0%, 100%': { transform: 'scale(1)', opacity: 0.4 },
+                      '50%': { transform: 'scale(1.3)', opacity: 0.8 },
+                    },
+                    animation: 'pulseFast 2s infinite'
+                  }}
+                />
               </Box>
-              
-              {/* Floating Stats Cards */}
-              <Box
-                position="absolute"
-                top="-20px"
-                right="-20px"
-                bg="white"
-                p={4}
-                borderRadius="2xl"
-                boxShadow="0 20px 40px rgba(0,0,0,0.1)"
-                border="1px solid"
-                borderColor="gray.100"
-                animation="float 4s ease-in-out infinite"
-              >
-                <HStack spacing={3}>
+            </Box>
+            
+            {/* Enhanced Floating Cards */}
+            <Box
+              position="absolute"
+              top="-30px"
+              right="-30px"
+              bg="white"
+              p={4}
+              borderRadius="2xl"
+              boxShadow="0 20px 40px rgba(0,0,0,0.1)"
+              border="1px solid"
+              borderColor="gray.100"
+              minW="200px"
+              sx={{
+                '@keyframes floatCard1': {
+                  '0%, 100%': { transform: 'translateY(0px)' },
+                  '50%': { transform: 'translateY(-10px)' },
+                },
+                animation: 'floatCard1 6s ease-in-out infinite'
+              }}
+            >
+              <VStack spacing={3}>
+                <HStack spacing={3} w="full">
                   <Icon as={FaUsers} color="blue.500" boxSize={6} />
-                  <VStack spacing={0} align="start">
+                  <VStack spacing={0} align="start" flex={1}>
                     <Text fontSize="lg" fontWeight="bold" color="gray.800">
-                      +847
+                      +2,847
                     </Text>
                     <Text fontSize="xs" color="gray.500">
-                      New insights
+                      New insights today
                     </Text>
                   </VStack>
                 </HStack>
-              </Box>
+                <Progress value={75} colorScheme="blue" size="sm" w="full" borderRadius="full" />
+              </VStack>
             </Box>
-          </SimpleGrid>
-        </Container>
-      </Box>
+            
+            <Box
+              position="absolute"
+              bottom="-40px"
+              left="-40px"
+              bg="white"
+              p={4}
+              borderRadius="2xl"
+              boxShadow="0 20px 40px rgba(0,0,0,0.1)"
+              border="1px solid"
+              borderColor="gray.100"
+              minW="180px"
+              sx={{
+                '@keyframes floatCard2': {
+                  '0%, 100%': { transform: 'translateY(0px)' },
+                  '50%': { transform: 'translateY(-15px)' },
+                },
+                animation: 'floatCard2 8s ease-in-out infinite'
+              }}
+            >
+              <VStack spacing={2}>
+                <HStack spacing={2} w="full">
+                  <Icon as={FaChartLine} color="green.500" boxSize={5} />
+                  <VStack spacing={0} align="start" flex={1}>
+                    <Text fontSize="md" fontWeight="bold" color="gray.800">
+                      98.5%
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Uptime
+                    </Text>
+                  </VStack>
+                </HStack>
+                <Badge colorScheme="green" variant="subtle" w="full" textAlign="center">
+                  <HStack spacing={1} justify="center">
+                    <Icon as={FaCheckCircle} boxSize={3} />
+                    <Text fontSize="2xs">All systems operational</Text>
+                  </HStack>
+                </Badge>
+              </VStack>
+            </Box>
+            
+            {/* Testimonial Card */}
+            <Box
+              position="absolute"
+              top="50%"
+              left="-60px"
+              transform="translateY(-50%)"
+              bg="white"
+              p={4}
+              borderRadius="2xl"
+              boxShadow="0 20px 40px rgba(0,0,0,0.1)"
+              border="1px solid"
+              borderColor="gray.100"
+              maxW="250px"
+              sx={{
+                '@keyframes floatCard3': {
+                  '0%, 100%': { transform: 'translateY(-50%) translateX(0px)' },
+                  '50%': { transform: 'translateY(-50%) translateX(-10px)' },
+                },
+                animation: 'floatCard3 10s ease-in-out infinite'
+              }}
+            >
+              <VStack spacing={3}>
+                <HStack spacing={3} w="full">
+                  <Avatar 
+                    src={testimonialsHero[currentTestimonial].avatar} 
+                    size="sm"
+                  />
+                  <VStack spacing={0} align="start" flex={1}>
+                    <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                      {testimonialsHero[currentTestimonial].name}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      {testimonialsHero[currentTestimonial].role}
+                    </Text>
+                  </VStack>
+                </HStack>
+                <Text fontSize="xs" color="gray.600" textAlign="left">
+                  <Icon as={FaQuoteLeft} boxSize={3} color="gray.400" mr={1} />
+                  {testimonialsHero[currentTestimonial].text}
+                </Text>
+                <HStack spacing={1} w="full">
+                  {[...Array(testimonialsHero[currentTestimonial].rating)].map((_, i) => (
+                    <Icon key={i} as={FaStar} color="yellow.400" boxSize={3} />
+                  ))}
+                </HStack>
+              </VStack>
+            </Box>
+          </Box>
+        </SimpleGrid>
+      </Container>
+    </Box>
 
       {/* Modern Stats Section */}
       <Box py={20} bg="white" position="relative" overflow="hidden">

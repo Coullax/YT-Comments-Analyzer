@@ -116,6 +116,7 @@ interface Statistics {
   total_comments: number;
   total_likes: number;
   average_likes: number;
+  fetched_comments:number;
   engagement_rates?: {
     high_engagement_rate: number;
     medium_engagement_rate: number;
@@ -374,7 +375,7 @@ const AnimatedRadarChart = ({ data }: { data: any }) => (
 
 export default function AnalysisResult({
   comments = [],
-  statistics = { total_comments: 0, total_likes: 0, average_likes: 0 },
+  statistics = { total_comments: 0, total_likes: 0, average_likes: 0, fetched_comments:0 },
   visualizations = {},
   ai_analysis = {
     sentiment_distribution: { positive: 0, neutral: 0, negative: 0 },
@@ -836,14 +837,33 @@ export default function AnalysisResult({
                   borderColor={useColorModeValue('gray.200', 'gray.700')}
                 >
                   <HStack justify="space-between" mb={4}>
-                    <Heading size="md" color="blue.500">Comment Thread</Heading>
-                    <IconButton
-                      aria-label="Toggle Comments"
-                      icon={isExpanded.comments ? <MdExpandLess /> : <MdExpandMore />}
-                      onClick={() => toggleSection('comments')}
-                      colorScheme="blue"
-                      size="sm"
-                    />
+                    <Heading size="md" color="blue.500">
+                      Comment Thread
+                    </Heading>
+                    <HStack spacing={2}>
+                      <Tooltip label="Total comments fetched" placement="top">
+                        <Badge
+                            fontSize="md"
+                            colorScheme="blue"
+                            variant="solid"
+                            borderRadius="full"
+                            px={3}
+                            py={1}
+                            boxShadow="sm"
+                            _hover={{ transform: 'scale(1.05)', boxShadow: 'md' }}
+                            transition="all 0.2s"
+                        >
+                          {statistics.fetched_comments}
+                        </Badge>
+                      </Tooltip>
+                      <IconButton
+                          aria-label="Toggle Comments"
+                          icon={isExpanded.comments ? <MdExpandLess /> : <MdExpandMore />}
+                          onClick={() => toggleSection('comments')}
+                          colorScheme="blue"
+                          size="sm"
+                      />
+                    </HStack>
                   </HStack>
                   <Collapse in={isExpanded.comments} animateOpacity>
                     <VStack spacing={4}>

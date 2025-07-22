@@ -944,16 +944,108 @@ def create_category_distribution(ai_analysis: Dict) -> str:
     plt.close()
     return image_base64
 
+# def perform_detailed_analysis(comments: List[Dict]) -> Dict:
+#     if not model:
+#         print("AI model not available")
+#         return create_default_section('all')
+#     try:
+#         comments_text = "Analyze these YouTube comments and their replies:\n\n"
+#         for i, comment in enumerate(comments[:50], 1):
+#             comments_text += f"Comment {i}:\n- Text: {comment['text']}\n- Likes: {comment['likes']}\n"
+#             for j, reply in enumerate(comment.get('replies', [])[:5], 1):
+#                 comments_text += f"  Reply {j}: {reply['text']} (Likes: {reply['likes']})\n"
+#             comments_text += "\n"
+#         prompt = f"""
+#         {comments_text}
+#         Provide a structured analysis in this exact JSON format:
+#         {{
+#             "sentiment_distribution": {{
+#                 "positive": number,
+#                 "neutral": number,
+#                 "negative": number
+#             }},
+#             "comment_categories": {{
+#                 "questions": number,
+#                 "praise": number,
+#                 "suggestions": number,
+#                 "complaints": number,
+#                 "general": number
+#             }},
+#             "engagement_metrics": {{
+#                 "high_engagement": number,
+#                 "medium_engagement": number,
+#                 "low_engagement": number
+#             }},
+#             "key_topics": [
+#                 {{"topic": "topic1", "count": number}},
+#                 {{"topic": "topic2", "count": number}},
+#                 {{"topic": "topic3", "count": number}}
+#             ],
+#             "overall_analysis": {{
+#                 "sentiment": "text",
+#                 "engagement_level": "text",
+#                 "community_health": "text"
+#             }},
+#             "recommendations": [
+#                 "recommendation1",
+#                 "recommendation2",
+#                 "recommendation3"
+#             ],
+#             "positiveInsights":[
+#                 "Positive Insight 1",
+#                 "Positive Insight 2",
+#                 "Positive Insight 3"
+#             ],
+#             "futureImprovementsSuggests":[
+#                 "suggestion 1",
+#                 "suggestion 1",
+#                 "suggestion 1"
+#             ],
+#         }}
+#         Rules:
+#         1. All numbers must be actual counts, not percentages
+#         2. Each comment belongs to exactly one category
+#         3. Engagement levels: high >100 likes, medium 10-100 likes, low <10 likes
+#         4. Key topics should be specific themes mentioned frequently
+#         5. Provide actionable recommendations
+#         6. Include both top-level comments and replies in the analysis
+#         Return ONLY the JSON object, no additional text.
+#         """
+#         max_retries = 3
+#         for attempt in range(max_retries):
+#             try:
+#                 response = model.generate_content(prompt)
+#                 if not response.text:
+#                     raise ValueError("Empty response from model")
+#                 parsed_result = parse_gemini_response(response.text)
+#                 if parsed_result is not None:
+#                     return parsed_result
+#                 else:
+#                     raise ValueError("Invalid JSON response from model")
+#             except Exception as e:
+#                 print(f"Attempt {attempt + 1} failed: {str(e)}")
+#                 if attempt == max_retries - 1:
+#                     raise
+#                 time.sleep(1)
+#         raise Exception("All retry attempts failed")
+#     except Exception as e:
+#         print(f"Error in AI analysis: {str(e)}")
+#         print(traceback.format_exc())
+#         return create_default_section('all')
+
 def perform_detailed_analysis(comments: List[Dict]) -> Dict:
     if not model:
         print("AI model not available")
-        return create_default_section('all')
+        return create_default_section('all'), 0  # Return default section and 0 comments analyzed
     try:
         comments_text = "Analyze these YouTube comments and their replies:\n\n"
+        analyzed_count = 0  # Track total comments and replies used
         for i, comment in enumerate(comments[:50], 1):
             comments_text += f"Comment {i}:\n- Text: {comment['text']}\n- Likes: {comment['likes']}\n"
+            analyzed_count += 1  # Count the top-level comment
             for j, reply in enumerate(comment.get('replies', [])[:5], 1):
                 comments_text += f"  Reply {j}: {reply['text']} (Likes: {reply['likes']})\n"
+                analyzed_count += 1  # Count each reply
             comments_text += "\n"
         prompt = f"""
         {comments_text}
@@ -998,9 +1090,9 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
             ],
             "futureImprovementsSuggests":[
                 "suggestion 1",
-                "suggestion 1",
-                "suggestion 1"
-            ],
+                "suggestion 2",
+                "suggestion 3"
+            ]
         }}
         Rules:
         1. All numbers must be actual counts, not percentages
@@ -1019,7 +1111,7 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
                     raise ValueError("Empty response from model")
                 parsed_result = parse_gemini_response(response.text)
                 if parsed_result is not None:
-                    return parsed_result
+                    return parsed_result, analyzed_count
                 else:
                     raise ValueError("Invalid JSON response from model")
             except Exception as e:
@@ -1031,7 +1123,7 @@ def perform_detailed_analysis(comments: List[Dict]) -> Dict:
     except Exception as e:
         print(f"Error in AI analysis: {str(e)}")
         print(traceback.format_exc())
-        return create_default_section('all')
+        return create_default_section('all'), 0
 
 def create_default_section(section_name: str) -> Dict:
     all_defaults = {
@@ -1065,6 +1157,8 @@ def extract_frame_from_video(youtube_url: str, time: str) -> BytesIO:
         ValueError: If the URL or time is invalid, or if extraction fails.
     """
     try:
+        print(time)
+        print(youtube_url)
         # Validate YouTube URL
         if not youtube_url.startswith(('https://www.youtube.com', 'https://youtu.be')):
             raise ValueError("Invalid YouTube URL")
@@ -1080,13 +1174,16 @@ def extract_frame_from_video(youtube_url: str, time: str) -> BytesIO:
         else:
             seconds = int(time)
 
+
         # Get direct video URL using yt-dlp
         direct_url = subprocess.check_output(["yt-dlp", "-g", youtube_url]).decode().strip()
+        print(direct_url)
 
         # Initialize OpenCV video capture
         cap = cv2.VideoCapture(direct_url)
         if not cap.isOpened():
             raise ValueError("Failed to open video stream")
+
 
         # Set frame position (in seconds)
         cap.set(cv2.CAP_PROP_POS_MSEC, seconds * 1000)
@@ -1302,6 +1399,7 @@ def extract_frame():
         
         youtube_url = data["youtube_url"]
         time = data["time"]
+        print(youtube_url)
         # extraction_id is not used in this example but can be logged or stored
 
         # Extract frame
@@ -1451,6 +1549,76 @@ def chat():
             }
         }), 500
 
+# @app.route("/api/analyze", methods=["POST"])
+# def analyze_video():
+#     try:
+#         data = request.get_json()
+#         if not data or "video_url" not in data or "analysis_id" not in data:
+#             return jsonify({"error": "Missing required parameters", "status": "error"}), 400
+#         video_id = extract_video_id(data["video_url"])
+#         video_stats = get_video_stats(video_id)
+#         comments = get_video_comments(data["video_url"])
+#         if not comments and video_stats['commentCount'] == 0:
+#             return jsonify({
+#                 "error": "Comments are disabled or no comments found",
+#                 "status": "error"
+#             }), 404
+#         comment_store[data["analysis_id"]] = comments
+#         def get_total_likes(comment):
+#             return comment['likes'] + sum(reply['likes'] for reply in comment.get('replies', []))
+#         sorted_comments = sorted(comments, key=get_total_likes, reverse=True)
+#         fetched_comments = len(sorted_comments)
+#         for comment in sorted_comments:
+#             fetched_comments += len(comment.get('replies', []))
+#         total_comments = video_stats['commentCount'] if video_stats['commentCount'] > 0 else fetched_comments
+#         total_likes = video_stats['likeCount']
+#         avg_likes = total_likes / total_comments if total_comments > 0 else 0
+#         ai_analysis = perform_detailed_analysis(sorted_comments)
+#         visualizations = {
+#             "sentiment_scatter": create_sentiment_visualization(sorted_comments),
+#             "engagement_distribution": create_engagement_visualization(sorted_comments),
+#             "wordcloud": create_wordcloud_visualization(sorted_comments),
+#             "sentiment_timeline": create_sentiment_timeline(sorted_comments),
+#             "category_distribution": create_category_distribution(ai_analysis)
+#         }
+#         for comment in sorted_comments:
+#             comment['sentiment'] = analyze_sentiment(comment['text'])
+#             for reply in comment.get('replies', []):
+#                 reply['sentiment'] = analyze_sentiment(reply['text'])
+#         engagement_rates = {
+#             "high_engagement_rate": (ai_analysis['engagement_metrics']['high_engagement'] / fetched_comments) * 100 if fetched_comments > 0 else 0,
+#             "medium_engagement_rate": (ai_analysis['engagement_metrics']['medium_engagement'] / fetched_comments) * 100 if fetched_comments > 0 else 0,
+#             "low_engagement_rate": (ai_analysis['engagement_metrics']['low_engagement'] / fetched_comments) * 100 if fetched_comments > 0 else 0
+#         }
+#         sentiment_metrics = {
+#             "positive_rate": (ai_analysis['sentiment_distribution']['positive'] / fetched_comments) * 100 if fetched_comments > 0 else 0,
+#             "neutral_rate": (ai_analysis['sentiment_distribution']['neutral'] / fetched_comments) * 100 if fetched_comments > 0 else 0,
+#             "negative_rate": (ai_analysis['sentiment_distribution']['negative'] / fetched_comments) * 100 if fetched_comments > 0 else 0,
+#             "average_sentiment": sum(c['sentiment']['polarity'] for c in sorted_comments) / fetched_comments if fetched_comments > 0 else 0
+#         }
+#         return jsonify({
+#             "status": "success",
+#             "id": data["analysis_id"],
+#             "comments": sorted_comments,
+#             "statistics": {
+#                 "total_comments": total_comments,
+#                 "total_likes": total_likes,
+#                 "average_likes": round(avg_likes, 2),
+#                 "engagement_rates": engagement_rates,
+#                 "sentiment_metrics": sentiment_metrics,
+#                 "view_count": video_stats['viewCount']
+#             },
+#             "visualizations": visualizations,
+#             "ai_analysis": ai_analysis,
+#             "error": None
+#         })
+#     except ValueError as e:
+#         print(traceback.format_exc())
+#         return jsonify({"error": str(e), "status": "error"}), 400
+#     except Exception as e:
+#         print(traceback.format_exc())
+#         return jsonify({"error": "Internal server error", "status": "error", "details": str(e)}), 500
+
 @app.route("/api/analyze", methods=["POST"])
 def analyze_video():
     try:
@@ -1475,7 +1643,7 @@ def analyze_video():
         total_comments = video_stats['commentCount'] if video_stats['commentCount'] > 0 else fetched_comments
         total_likes = video_stats['likeCount']
         avg_likes = total_likes / total_comments if total_comments > 0 else 0
-        ai_analysis = perform_detailed_analysis(sorted_comments)
+        ai_analysis, analyzed_comments = perform_detailed_analysis(sorted_comments)
         visualizations = {
             "sentiment_scatter": create_sentiment_visualization(sorted_comments),
             "engagement_distribution": create_engagement_visualization(sorted_comments),
@@ -1504,6 +1672,8 @@ def analyze_video():
             "comments": sorted_comments,
             "statistics": {
                 "total_comments": total_comments,
+                "fetched_comments": fetched_comments,  # Added: total comments and replies fetched
+                "analyzed_comments": analyzed_comments,  # Added: comments and replies used for AI analysis
                 "total_likes": total_likes,
                 "average_likes": round(avg_likes, 2),
                 "engagement_rates": engagement_rates,

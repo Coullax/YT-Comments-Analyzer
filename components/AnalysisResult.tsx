@@ -841,21 +841,23 @@ export default function AnalysisResult({
                       Comment Thread
                     </Heading>
                     <HStack spacing={2}>
-                      <Tooltip label="Total comments fetched" placement="top">
-                        <Badge
-                            fontSize="md"
-                            colorScheme="blue"
-                            variant="solid"
-                            borderRadius="full"
-                            px={3}
-                            py={1}
-                            boxShadow="sm"
-                            _hover={{ transform: 'scale(1.05)', boxShadow: 'md' }}
-                            transition="all 0.2s"
-                        >
-                          {statistics.fetched_comments}
-                        </Badge>
-                      </Tooltip>
+                      {statistics?.fetched_comments != null && (
+                          <Tooltip label="Total comments fetched" placement="top">
+                            <Badge
+                                fontSize="md"
+                                colorScheme="blue"
+                                variant="solid"
+                                borderRadius="full"
+                                px={3}
+                                py={1}
+                                boxShadow="sm"
+                                _hover={{ transform: 'scale(1.05)', boxShadow: 'md' }}
+                                transition="all 0.2s"
+                            >
+                              {statistics.fetched_comments}
+                            </Badge>
+                          </Tooltip>
+                      )}
                       <IconButton
                           aria-label="Toggle Comments"
                           icon={isExpanded.comments ? <MdExpandLess /> : <MdExpandMore />}

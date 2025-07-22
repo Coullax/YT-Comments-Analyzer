@@ -125,19 +125,19 @@ export default function SuccessPage() {
           size="80px"
           bg="blue.500"
           position="relative"
-          _before={{
-            content: "''",
-            display: 'block',
-            position: 'absolute',
-            width: '300%',
-            height: '300%',
-            boxSizing: 'border-box',
-            marginLeft: '-100%',
-            marginTop: '-100%',
-            borderRadius: '50%',
-            bgColor: 'blue.400',
-            animation: `2.25s ${pulseRing} cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite`,
-          }}
+          // _before={{
+          //   content: "''",
+          //   display: 'block',
+          //   position: 'absolute',
+          //   width: '300%',
+          //   height: '300%',
+          //   boxSizing: 'border-box',
+          //   marginLeft: '-100%',
+          //   marginTop: '-100%',
+          //   borderRadius: '50%',
+          //   bgColor: 'blue.400',
+          //   animation: `2.25s ${pulseRing} cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite`,
+          // }}
         >
           <Spinner size="xl" color="white" thickness="4px" />
         </Circle>
@@ -162,27 +162,27 @@ export default function SuccessPage() {
   )
 
   const SuccessState = () => (
-    <ScaleFade initialScale={0.5} in={status === 'success'}>
-      <VStack spacing={6}>
+    // <ScaleFade initialScale={0.5} in={status === 'success'}>
+      <VStack spacing={6} >
         <Box position="relative">
           <Circle
             size="100px"
             bg="green.500"
             color="white"
-            animation={`${bounce} 1s ease infinite`}
-            _before={{
-              content: "''",
-              display: 'block',
-              position: 'absolute',
-              width: '300%',
-              height: '300%',
-              boxSizing: 'border-box',
-              marginLeft: '-100%',
-              marginTop: '-100%',
-              borderRadius: '50%',
-              bgColor: 'green.400',
-              animation: `2.25s ${pulseRing} cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite`,
-            }}
+            // animation={`${bounce} 1s ease infinite`}
+            // _before={{
+            //   content: "''",
+            //   display: 'block',
+            //   position: 'absolute',
+            //   width: '300%',
+            //   height: '300%',
+            //   boxSizing: 'border-box',
+            //   marginLeft: '-100%',
+            //   marginTop: '-100%',
+            //   borderRadius: '50%',
+            //   bgColor: 'green.400',
+            //   animation: `2.25s ${pulseRing} cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite`,
+            // }}
           >
             <Icon as={FaCheckCircle} boxSize={12} />
           </Circle>
@@ -238,7 +238,7 @@ export default function SuccessPage() {
           </Button>
         </VStack>
       </VStack>
-    </ScaleFade>
+    // </ScaleFade>
   )
 
   const ErrorState = () => (

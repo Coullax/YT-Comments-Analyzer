@@ -123,7 +123,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         ml={{ base: 0, md: '280px' }} 
         transition="margin-left 0.3s ease"
       >
-        <Box p={{ base: 4, md: 8 }}>
+        <Box >
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

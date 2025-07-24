@@ -347,6 +347,7 @@ type Statistics = {
         neutral_rate: number;
         negative_rate: number;
     };
+    fetched_comments:any
 };
 
 type AIAnalysis = {
@@ -378,6 +379,7 @@ type AIAnalysis = {
     };
     recommendations: string[];
     positiveInsights: string[];
+    futureImprovementsSuggests:any
 };
 
 type Visualizations = {
@@ -407,7 +409,7 @@ const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
-            cacheTime: 30 * 60 * 1000, // Cache persists for 30 minutes
+            // cacheTime: 30 * 60 * 1000, // Cache persists for 30 minutes
             retry: 1, // Retry failed requests once
         },
     },
@@ -442,7 +444,7 @@ const AnalyticsResultsContent: React.FC = () => {
         queryFn: () => fetchAnalyticsResults(page, PAGE_SIZE),
         keepPreviousData: true, // Keep previous data while fetching new page
         refetchOnMount: 'always', // Always refetch when component mounts
-        onSuccess: (newData) => {
+        onSuccess: (newData : any) => {
             // Compare new data with cached data
             const cachedData = queryClient.getQueryData(['analyticsResults', page]);
             if (cachedData && !isEqual(cachedData, newData)) {
@@ -511,7 +513,7 @@ const AnalyticsResultsContent: React.FC = () => {
                     ) : (
                         <Box w="full">
                             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-                                {results.map(result=> (
+                                {results.map((result:any) => (
                                     <Card
                                         key={result.id}
                                         boxShadow="md"

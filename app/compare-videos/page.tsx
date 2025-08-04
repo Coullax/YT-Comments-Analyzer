@@ -10,7 +10,7 @@ import {
 import { useSession } from 'next-auth/react';
 import { MdCheck, MdClose, MdArrowDropDown } from 'react-icons/md';
 import DashboardLayout from '@/components/DashboardLayout';
-import {router} from "next/client";
+import {useRouter} from "next/navigation";
 
 interface Analysis {
     id: string;
@@ -57,6 +57,7 @@ export default function CompareVideos() {
     const [error, setError] = useState<ErrorResponse | null>(null)
     const [userSubscription, setUserSubscription] = useState<{ plan: string } | null>(null)
     const toast = useToast();
+    const router = useRouter();
 
     useEffect(() => {
         const fetchSubscription = async () => {

@@ -380,6 +380,14 @@ type AIAnalysis = {
     recommendations: string[];
     positiveInsights: string[];
     futureImprovementsSuggests:any
+    botComments: [{
+        text: string;
+        author: string;
+    }];
+    scamComments: [{
+        text: string;
+        author: string;
+    }];
 };
 
 type Visualizations = {

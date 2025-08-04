@@ -39,9 +39,14 @@ export async function GET(req: Request) {
       });
     }
 
-    if (analysis.sentiment?.error) {
+    if (
+      analysis.sentiment &&
+      typeof analysis.sentiment === 'object' &&
+      'error' in analysis.sentiment &&
+      (analysis.sentiment as any).error
+    ) {
       return NextResponse.json(
-        { status: 'error', error: analysis.sentiment.error },
+        { status: 'error', error: (analysis.sentiment as any).error },
         { status: 500 }
       );
     }

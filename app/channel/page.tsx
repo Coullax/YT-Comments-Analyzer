@@ -33,10 +33,13 @@ import {
     Tab,
     TabPanels,
     TabPanel,
+    Flex,
+    Badge,
+    // keyframes,
 } from '@chakra-ui/react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { MdVideoLibrary, MdAdd } from 'react-icons/md';
+import { MdVideoLibrary, MdAdd, MdPlayCircle } from 'react-icons/md';
 import DashboardLayout from '@/components/DashboardLayout';
 import AnalysisResult from '@/components/AnalysisResult';
 
@@ -51,11 +54,7 @@ interface AnalysisResponse {
             subjectivity: number;
         };
     }>;
-    statistics: {
-        total_comments: number;
-        total_likes: number;
-        average_likes: number;
-    };
+    statistics: any
     sentiment_visualization: string;
     visualizations: any;
     ai_analysis: any;
@@ -119,6 +118,13 @@ export default function YouTubeThumbnails() {
     const { data: session, status } = useSession();
     const toast = useToast();
     const router = useRouter();
+
+    // Animation for card hover
+    // const pulse = keyframes`
+    //     0% { transform: scale(1); }
+    //     50% { transform: scale(1.03); }
+    //     100% { transform: scale(1); }
+    // `;
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -293,23 +299,27 @@ export default function YouTubeThumbnails() {
 
     return (
         <DashboardLayout>
-            <Container maxW="container.xl" py={8}>
-                <VStack spacing={8} align="center">
+            <Container maxW="container.xl" py={12}>
+                <VStack spacing={10} align="stretch">
                     <Box textAlign="center">
-                        <Heading size="lg" mb={2} color="#FF0000">
-                            YouTube Channel Video Thumbnails
+                        <Heading
+                            size="2xl"
+                            mb={4}
+                            bgGradient="linear(to-r, red.500, orange.500)"
+                            bgClip="text"
+                            fontWeight="extrabold"
+                        >
+                            YouTube Video Explorer
                         </Heading>
-                        <Text color="gray.600">
-                            Browse videos from your saved YouTube channels and analyze their comments
+                        <Text fontSize="lg" color="gray.500" maxW="2xl" mx="auto">
+                            Discover and analyze videos from your favorite YouTube channels with ease
                         </Text>
                     </Box>
 
                     {/* Tabs for Channels */}
                     <Tabs
-                        variant="soft-rounded"
-                        colorScheme="red"
+                        variant="unstyled"
                         w="full"
-                        maxW="3xl"
                         onChange={(index) => {
                             if (index < channels.length) {
                                 setSelectedChannelId(channels[index].channelId);
@@ -319,62 +329,137 @@ export default function YouTubeThumbnails() {
                             }
                         }}
                     >
-                        <TabList overflowX="auto" pb={2}>
+                        <TabList
+                            bg="gray.50"
+                            borderRadius="full"
+                            p={2}
+                            display="flex"
+                            justifyContent="center"
+                            overflowX="auto"
+                        >
                             {channels.map((channel) => (
-                                <Tab key={channel.channelId} fontWeight="medium">
+                                <Tab
+                                    key={channel.channelId}
+                                    borderRadius="full"
+                                    px={6}
+                                    py={3}
+                                    mx={1}
+                                    fontWeight="semibold"
+                                    color="gray.600"
+                                    _selected={{
+                                        bg: 'red.500',
+                                        color: 'white',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                                    }}
+                                    _hover={{
+                                        bg: 'red.100',
+                                        color: 'red.800',
+                                    }}
+                                    transition="all 0.3s"
+                                >
                                     {channel.channelUrl.includes('/@')
                                         ? channel.channelUrl.match(/@[\w-]+/)?.[0] || channel.channelId
                                         : channel.channelId}
+                                    <Badge
+                                        ml={2}
+                                        colorScheme="red"
+                                        borderRadius="full"
+                                        px={2}
+                                        fontSize="0.7em"
+                                    >
+                                        {videoIds.length}
+                                    </Badge>
                                 </Tab>
                             ))}
-                            <Tab>
+                            <Tab
+                                borderRadius="full"
+                                px={4}
+                                py={3}
+                                mx={1}
+                                bg="red.500"
+                                color="white"
+                                _hover={{ bg: 'red.600' }}
+                                transition="all 0.3s"
+                            >
                                 <Icon as={MdAdd} boxSize={5} />
                             </Tab>
                         </TabList>
 
-                        <TabPanels>
+                        <TabPanels mt={6}>
                             {channels.map((channel) => (
-                                <TabPanel key={channel.channelId} p={0} pt={4}>
+                                <TabPanel key={channel.channelId} p={0}>
                                     {/* Thumbnails Grid */}
                                     {videoIds.length > 0 && selectedChannelId === channel.channelId && (
-                                        <Box w="full">
-                                            <Heading size="md" mb={4} color="#FF0000">
-                                                Videos from{' '}
-                                                <a
-                                                    href={channel.channelUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{ color: '#FF0000', textDecoration: 'underline' }}
-                                                >
-                                                    {channel.channelUrl.includes('/@')
-                                                        ? channel.channelUrl.match(/@[\w-]+/)?.[0]
-                                                        : channel.channelId}
-                                                </a>
-                                            </Heading>
-                                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                                        <Box>
+                                            <Flex align="center" mb={6}>
+                                                <Heading size="md" color="gray.700">
+                                                    Videos from{' '}
+                                                    <a
+                                                        href={channel.channelUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            color: 'red.500',
+                                                            textDecoration: 'none',
+                                                            fontWeight: 'bold',
+                                                        }}
+                                                    >
+                                                        {channel.channelUrl.includes('/@')
+                                                            ? channel.channelUrl.match(/@[\w-]+/)?.[0]
+                                                            : channel.channelId}
+                                                    </a>
+                                                </Heading>
+                                            </Flex>
+                                            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
                                                 {videoIds.map((videoId) => (
                                                     <Card
                                                         key={videoId}
-                                                        boxShadow="md"
-                                                        borderRadius="lg"
+                                                        borderRadius="2xl"
                                                         overflow="hidden"
+                                                        bg="white"
+                                                        boxShadow="0 8px 24px rgba(0,0,0,0.05)"
                                                         cursor="pointer"
                                                         _hover={{
-                                                            boxShadow: 'lg',
-                                                            transform: 'scale(1.02)',
-                                                            transition: 'all 0.2s',
+                                                            // animation: `${pulse} 0.5s ease-in-out`,
+                                                            boxShadow: '0 12px 32px rgba(0,0,0,0.1)',
                                                         }}
                                                         onClick={() => handleVideoClick(videoId)}
+                                                        transition="all 0.3s"
                                                     >
-                                                        <Image
-                                                            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
-                                                            alt={`Thumbnail for video ${videoId}`}
-                                                            objectFit="cover"
-                                                            width="100%"
-                                                            height="auto"
-                                                        />
-                                                        <CardBody p={3}>
-                                                            <Text fontSize="sm" noOfLines={2}>
+                                                        <Box position="relative">
+                                                            <Image
+                                                                src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                                                                alt={`Thumbnail for video ${videoId}`}
+                                                                objectFit="cover"
+                                                                width="100%"
+                                                                height="200px"
+                                                                borderTopRadius="2xl"
+                                                            />
+                                                            <Center
+                                                                position="absolute"
+                                                                top="0"
+                                                                left="0"
+                                                                right="0"
+                                                                bottom="0"
+                                                                bg="blackAlpha.400"
+                                                                opacity={0}
+                                                                _hover={{ opacity: 1 }}
+                                                                transition="opacity 0.3s"
+                                                            >
+                                                                <Icon
+                                                                    as={MdPlayCircle}
+                                                                    boxSize={16}
+                                                                    color="white"
+                                                                />
+                                                            </Center>
+                                                        </Box>
+                                                        <CardBody p={4}>
+                                                            <Text
+                                                                fontSize="sm"
+                                                                color="gray.600"
+                                                                fontWeight="medium"
+                                                                noOfLines={2}
+                                                            >
                                                                 Click to analyze comments
                                                             </Text>
                                                         </CardBody>
@@ -389,9 +474,14 @@ export default function YouTubeThumbnails() {
                                         videoIds.length === 0 &&
                                         selectedChannelId === channel.channelId &&
                                         !error && (
-                                            <Card bg="gray.50" w="full" maxW="3xl">
+                                            <Card
+                                                bg="gray.50"
+                                                borderRadius="2xl"
+                                                p={6}
+                                                textAlign="center"
+                                            >
                                                 <CardBody>
-                                                    <Text color="gray.600" textAlign="center">
+                                                    <Text color="gray.500" fontSize="lg">
                                                         No videos found for this channel.
                                                     </Text>
                                                 </CardBody>
@@ -400,38 +490,62 @@ export default function YouTubeThumbnails() {
 
                                     {/* Error Message */}
                                     {error && selectedChannelId === channel.channelId && (
-                                        <Card bg="red.50" w="full" maxW="3xl">
+                                        <Card bg="red.50" borderRadius="2xl" p={6}>
                                             <CardBody>
-                                                <Text color="red.800">{error}</Text>
+                                                <Text color="red.600" fontWeight="medium">
+                                                    {error}
+                                                </Text>
                                             </CardBody>
                                         </Card>
                                     )}
 
                                     {/* Loading State */}
                                     {loading && selectedChannelId === channel.channelId && (
-                                        <Center p={8}>
+                                        <Center py={12}>
                                             <VStack spacing={4}>
-                                                <Spinner size="xl" color="#FF0000" />
-                                                <Text color="gray.600">Fetching videos...</Text>
+                                                <Spinner size="xl" color="red.500" thickness="4px" />
+                                                <Text color="gray.500" fontSize="lg">
+                                                    Fetching videos...
+                                                </Text>
                                             </VStack>
                                         </Center>
                                     )}
                                 </TabPanel>
                             ))}
-                            <TabPanel p={0} pt={4}>
+                            <TabPanel p={0}>
                                 {/* Add Channel Form */}
-                                <Card boxShadow="lg" borderRadius="xl" bg="white" p={6} w="full" maxW="3xl">
+                                <Card
+                                    borderRadius="2xl"
+                                    bg="white"
+                                    p={8}
+                                    boxShadow="0 8px 24px rgba(0,0,0,0.05)"
+                                    maxW="2xl"
+                                    mx="auto"
+                                >
                                     <CardBody>
                                         <form onSubmit={handleAddChannel}>
                                             <VStack spacing={6}>
                                                 <FormControl>
-                                                    <FormLabel fontWeight="bold" color="#FF0000" fontSize="lg">
-                                                        <Icon as={MdVideoLibrary} color="#FF0000" mr={2} />
+                                                    <FormLabel
+                                                        fontWeight="bold"
+                                                        color="gray.700"
+                                                        fontSize="lg"
+                                                    >
+                                                        <Icon
+                                                            as={MdVideoLibrary}
+                                                            color="red.500"
+                                                            mr={2}
+                                                            verticalAlign="middle"
+                                                        />
                                                         Add YouTube Channel
                                                     </FormLabel>
                                                     <InputGroup size="lg">
                                                         <InputLeftElement pointerEvents="none">
-                                                            <Icon as={MdVideoLibrary} color="#FF0000" boxSize={6} />
+                                                            <Icon
+                                                                as={MdVideoLibrary}
+                                                                color="red.500"
+                                                                boxSize={6}
+                                                            />
                                                         </InputLeftElement>
                                                         <Input
                                                             type="url"
@@ -439,33 +553,39 @@ export default function YouTubeThumbnails() {
                                                             placeholder="Paste a YouTube channel URL..."
                                                             value={channelUrl}
                                                             onChange={(e) => setChannelUrl(e.target.value)}
-                                                            bgGradient="linear(to-r, #FFF, #F9F9F9)"
-                                                            borderColor="#FF0000"
+                                                            bg="gray.50"
+                                                            borderColor="gray.200"
+                                                            borderRadius="lg"
                                                             _focus={{
-                                                                borderColor: '#FF0000',
-                                                                boxShadow: '0 0 0 2px #FF0000',
+                                                                borderColor: 'red.500',
+                                                                boxShadow: '0 0 0 3px rgba(255,0,0,0.1)',
                                                             }}
                                                             fontSize="md"
-                                                            fontWeight={500}
-                                                            borderRadius="md"
+                                                            fontWeight="medium"
                                                             pl={12}
                                                             py={6}
-                                                            transition="box-shadow 0.2s"
+                                                            transition="all 0.3s"
+                                                            _hover={{ borderColor: 'red.300' }}
                                                         />
                                                     </InputGroup>
                                                 </FormControl>
                                                 <Button
                                                     type="submit"
-                                                    bg="#FF0000"
+                                                    bgGradient="linear(to-r, red.500, orange.500)"
                                                     color="white"
                                                     isLoading={loading}
                                                     loadingText="Saving..."
                                                     size="lg"
-                                                    borderRadius="md"
-                                                    fontWeight={700}
-                                                    boxShadow="0 2px 8px rgba(255,0,0,0.10)"
-                                                    _hover={{ bg: '#CC0000' }}
+                                                    borderRadius="lg"
+                                                    fontWeight="bold"
                                                     px={8}
+                                                    py={6}
+                                                    boxShadow="0 4px 12px rgba(0,0,0,0.1)"
+                                                    _hover={{
+                                                        bgGradient: 'linear(to-r, red.600, orange.600)',
+                                                        boxShadow: '0 6px 16px rgba(0,0,0,0.15)',
+                                                    }}
+                                                    transition="all 0.3s"
                                                 >
                                                     🚀 Add Channel
                                                 </Button>
@@ -479,19 +599,21 @@ export default function YouTubeThumbnails() {
 
                     {/* Loading State for Channels */}
                     {channelLoading && (
-                        <Center p={8}>
+                        <Center py={12}>
                             <VStack spacing={4}>
-                                <Spinner size="xl" color="#FF0000" />
-                                <Text color="gray.600">Loading saved channels...</Text>
+                                <Spinner size="xl" color="red.500" thickness="4px" />
+                                <Text color="gray.500" fontSize="lg">
+                                    Loading saved channels...
+                                </Text>
                             </VStack>
                         </Center>
                     )}
 
                     {/* No Channels Message */}
                     {!channelLoading && channels.length === 0 && (
-                        <Card bg="gray.50" w="full" maxW="3xl">
+                        <Card bg="gray.50" borderRadius="2xl" p={6} textAlign="center">
                             <CardBody>
-                                <Text color="gray.600" textAlign="center">
+                                <Text color="gray.500" fontSize="lg">
                                     No saved channels. Add a channel using the + tab.
                                 </Text>
                             </CardBody>
@@ -500,31 +622,57 @@ export default function YouTubeThumbnails() {
 
                     {/* Analysis Modal */}
                     <Modal isOpen={isOpen} onClose={onClose} size="full">
-                        <ModalOverlay />
-                        <ModalContent maxW="90%" borderRadius="xl">
-                            <ModalHeader bg="#FF0000" color="white" borderTopRadius="xl">
+                        <ModalOverlay bg="blackAlpha.700" />
+                        <ModalContent maxW="8xl" borderRadius="2xl" overflow="hidden">
+                            <ModalHeader
+                                bgGradient="linear(to-r, red.500, orange.500)"
+                                color="white"
+                                borderTopRadius="2xl"
+                                fontSize="xl"
+                                fontWeight="bold"
+                                py={4}
+                            >
                                 Video Comment Analysis
                             </ModalHeader>
-                            <ModalCloseButton color="white" />
-                            <ModalBody p={6}>
+                            <ModalCloseButton color="white" _hover={{ color: 'gray.200' }} />
+                            <ModalBody p={8} bg="gray.50">
                                 {analysisLoading && (
-                                    <Center p={8}>
+                                    <Center py={12}>
                                         <VStack spacing={4}>
-                                            <Spinner size="xl" color="#FF0000" />
-                                            <Text color="gray.600">Analyzing video comments...</Text>
+                                            <Spinner size="xl" color="red.500" thickness="4px" />
+                                            <Text color="gray.500" fontSize="lg">
+                                                Analyzing video comments...
+                                            </Text>
                                         </VStack>
                                     </Center>
                                 )}
                                 {analysisError && (
-                                    <Card bg={analysisError.upgradeRequired ? 'orange.50' : 'red.50'} mb={4}>
+                                    <Card
+                                        bg={analysisError.upgradeRequired ? 'orange.50' : 'red.50'}
+                                        borderRadius="2xl"
+                                        p={6}
+                                        mb={6}
+                                    >
                                         <CardBody>
                                             <VStack spacing={4}>
-                                                <Text color={analysisError.upgradeRequired ? 'orange.800' : 'red.800'}>
+                                                <Text
+                                                    color={
+                                                        analysisError.upgradeRequired
+                                                            ? 'orange.600'
+                                                            : 'red.600'
+                                                    }
+                                                    fontWeight="medium"
+                                                >
                                                     {analysisError.error}
                                                 </Text>
                                                 {analysisError.upgradeRequired && (
                                                     <Button
-                                                        colorScheme="orange"
+                                                        bgGradient="linear(to-r, orange.500, red.500)"
+                                                        color="white"
+                                                        borderRadius="lg"
+                                                        _hover={{
+                                                            bgGradient: 'linear(to-r, orange.600, red.600)',
+                                                        }}
                                                         onClick={() => router.push('/pricing')}
                                                     >
                                                         Upgrade to PRO

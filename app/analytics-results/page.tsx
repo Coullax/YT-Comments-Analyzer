@@ -290,7 +290,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Container,
@@ -450,23 +450,40 @@ const AnalyticsResultsContent: React.FC = () => {
     const { data, isLoading, error } = useQuery({
         queryKey: ['analyticsResults', page], // Unique key for caching, changes with page
         queryFn: () => fetchAnalyticsResults(page, PAGE_SIZE),
-        keepPreviousData: true, // Keep previous data while fetching new page
+        placeholderData: previousData => previousData,
         refetchOnMount: 'always', // Always refetch when component mounts
-        onSuccess: (newData : any) => {
-            // Compare new data with cached data
-            const cachedData = queryClient.getQueryData(['analyticsResults', page]);
-            if (cachedData && !isEqual(cachedData, newData)) {
-                // Update cache if data has changed
-                queryClient.setQueryData(['analyticsResults', page], newData);
-                toast({
-                    title: 'Data Updated',
-                    description: 'New analytics results have been loaded.',
-                    status: 'info',
-                    duration: 3000,
-                });
-            }
-        },
+        // onSuccess: (newData : any) => {
+        //     // Compare new data with cached data
+        //     const cachedData = queryClient.getQueryData<any>(['analyticsResults', page]);
+        //     if (cachedData && !isEqual(cachedData, newData)) {
+        //         // Update cache if data has changed
+        //         queryClient.setQueryData(['analyticsResults', page], newData);
+        //         toast({
+        //             title: 'Data Updated',
+        //             description: 'New analytics results have been loaded.',
+        //             status: 'info',
+        //             duration: 3000,
+        //         });
+        //     }
+        // },
     });
+
+    useEffect(() => {
+    if (data) {
+      // Compare new data with cached data
+      const cachedData = queryClient.getQueryData<any>(['analyticsResults', page]);
+      if (cachedData && !isEqual(cachedData, data)) {
+        // Update cache if data has changed
+        queryClient.setQueryData(['analyticsResults', page], data);
+        toast({
+          title: 'Data Updated',
+          description: 'New analytics results have been loaded.',
+          status: 'info',
+          duration: 3000,
+        });
+      }
+    }
+  }, [data, page, queryClient]); // Run when data or page changes
 
     // Handle error
     React.useEffect(() => {
@@ -588,12 +605,12 @@ const AnalyticsResultsContent: React.FC = () => {
                     {selectedResult && (
                         <Modal isOpen={isOpen} onClose={onClose} size="full">
                             <ModalOverlay backdropFilter="blur(10px)" />
-                            <ModalContent maxW="90%" borderRadius="xl">
-                                <ModalHeader bg="#FF0000" color="white" borderTopRadius="xl">
+                            <ModalContent maxW="8xl" borderRadius="xl">
+                                <ModalHeader bgGradient='linear(135deg, #667eea 0%, #764ba2 100%)' color="white" borderTopRadius="xl">
                                     Video Analysis Details
                                 </ModalHeader>
                                 <ModalCloseButton color="white" />
-                                <ModalBody pb={6}>
+                                <ModalBody pb={6} bgGradient='linear(135deg, #667eea 0%, #764ba2 100%)'>
                                     <AnalysisResult
                                         analysisId={selectedResult.id}
                                         comments={selectedResult.comments}

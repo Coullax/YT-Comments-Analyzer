@@ -86,8 +86,7 @@ import {
   MdVisibility,
   MdShare,
   MdChatBubble,
-  MdRobot,
-  MdAlert,
+  MdAlarm,
 } from 'react-icons/md';
 import { IconType } from 'react-icons';
 import CommentChat from './CommentChat';
@@ -625,36 +624,39 @@ export default function AnalysisResult({
   };
 
   return (
-      <Box
-          minH="100vh"
-          position="relative"
-          _before={{
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            pointerEvents: 'none',
-          }}
-      >
-        <Container maxW="8xl" py={8}>
-          <VStack spacing={8} align="stretch">
-            {/* Header */}
-            <Box textAlign="center" py={8}>
-              <chakra.h1
-                  fontSize={{ base: '3xl', md: '5xl' }}
-                  fontWeight="bold"
-                  color="white"
-                  mb={4}
-                  textShadow="2xl"
-              >
-                Video Analysis Dashboard
-              </chakra.h1>
-              <Text fontSize="xl" color="whiteAlpha.800" maxW="2xl" mx="auto">
-                AI-powered insights from your YouTube video comments
-              </Text>
-            </Box>
+    <Box
+      minH="100vh"
+      // bgGradient={bgGradient}
+      position="relative"
+      _before={{
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        // bgImage: `radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        //           radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%)`,
+        pointerEvents: 'none',
+      }}
+    >
+      <Container maxW="8xl" py={8}>
+        <VStack spacing={8} align="stretch">
+          {/* Header */}
+          {/* <Box textAlign="center" py={8}>
+            <chakra.h1
+              fontSize={{ base: '3xl', md: '5xl' }}
+              fontWeight="bold"
+              color="white"
+              mb={4}
+              textShadow="2xl"
+            >
+              Video Analysis Dashboard
+            </chakra.h1>
+            <Text fontSize="xl" color="whiteAlpha.800" maxW="2xl" mx="auto">
+              AI-powered insights from your YouTube video comments
+            </Text>
+          </Box> */}
 
             {/* Modern Tab System */}
             <GlassmorphicCard>
@@ -892,7 +894,7 @@ export default function AnalysisResult({
                                 <VStack spacing={3} align="stretch">
                                   {ai_analysis.botComments.map((comment, index) => (
                                       <Alert key={index} status="error" borderRadius="lg" variant="left-accent">
-                                        <AlertIcon as={MdRobot} />
+                                        {/* <AlertIcon as={MdRobot} /> */}
                                         <VStack align="start" spacing={1}>
                                           <Text fontSize="sm" fontWeight="medium">{comment.author}</Text>
                                           <Text fontSize="sm">{comment.text}</Text>
@@ -912,7 +914,7 @@ export default function AnalysisResult({
                                 <VStack spacing={3} align="stretch">
                                   {ai_analysis.scamComments.map((comment, index) => (
                                       <Alert key={index} status="warning" borderRadius="lg" variant="left-accent">
-                                        <AlertIcon as={MdAlert} />
+                                        <AlertIcon as={MdAlarm} />
                                         <VStack align="start" spacing={1}>
                                           <Text fontSize="sm" fontWeight="medium">{comment.author}</Text>
                                           <Text fontSize="sm">{comment.text}</Text>

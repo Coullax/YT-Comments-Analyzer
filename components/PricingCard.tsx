@@ -97,7 +97,7 @@ export default function PricingCard({
         }
         
         // Refresh the page to update subscription status
-        window.location.reload()
+        router.refresh()
       } 
       // If user is Pro and clicking on Free card, handle unsubscribe (downgrade)
       else if (isPro && plan === 'free') {
@@ -110,7 +110,7 @@ export default function PricingCard({
           isClosable: true,
         })
         // Refresh the page to update subscription status
-        window.location.reload()
+        router.refresh()
       }
       // If user is Free and clicking on Pro card, handle upgrade
       else if (!isPro && plan === 'pro') {

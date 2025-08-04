@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import Stripe from 'stripe'
 import { prisma } from '@/lib/prisma'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { authOptions } from '@/lib/auth';
 
 const stripe = new Stripe("sk_test_51RWtL1P4c9HnIgUrVmrBBwhZSsQLDW0h5sTT6DJ4vvJqWyO999tdkR70aaHKjhBCyOkOrOJnbo2Y7gcqmFActvKl00toxoyNWc", {
   apiVersion: '2023-10-16',

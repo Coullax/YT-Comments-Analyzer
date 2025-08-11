@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 export const handleSubscription = async (plan: string) => {
     const router = useRouter()
   try {
-    const response = await fetch('http://localhost:3000/api/subscription', {
+    const response = await fetch('api/subscription', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
